@@ -587,7 +587,7 @@
     document.getElementById('app-screen').style.display = 'none';
   }
 
-  function showApp() {
+  async function showApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-screen').style.display = 'block';
     const { data: map } = await sb
