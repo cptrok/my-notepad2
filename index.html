@@ -864,10 +864,10 @@
     currentTab = tab;
     document.getElementById('tab-notes').classList.toggle('active', tab === 'notes');
     document.getElementById('tab-clickup').classList.toggle('active', tab === 'clickup');
-    document.getElementById('notes-list').style.display = tab === 'notes' ? '' : 'none';
-    document.getElementById('tasks-list').style.display = tab === 'clickup' ? '' : 'none';
-    document.getElementById('search-box-notes').style.display = tab === 'notes' ? '' : 'none';
-    document.getElementById('btn-new-note').style.display = tab === 'notes' ? '' : 'none';
+    document.getElementById('notes-list').style.display = tab === 'notes' ? 'block' : 'none';
+    document.getElementById('tasks-list').style.display = tab === 'clickup' ? 'block' : 'none';
+    document.getElementById('search-box-notes').style.display = tab === 'notes' ? 'block' : 'none';
+    document.getElementById('btn-new-note').style.display = tab === 'notes' ? 'flex' : 'none';
 
     if (tab === 'clickup' && allTasks.length === 0) {
       loadClickUpTasks();
