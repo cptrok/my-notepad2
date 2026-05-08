@@ -254,6 +254,32 @@
 
     .search-box:focus { border-color: var(--primary); }
 
+    .sidebar-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 7px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
     .notes-list { flex: 1; overflow-y: auto; padding: 6px; }
     .notes-list::-webkit-scrollbar { width: 4px; }
     .notes-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -290,6 +316,102 @@
     }
 
     .note-item-date { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+    .tasks-list { flex: 1; overflow-y: auto; padding: 6px; display: none; }
+    .tasks-list::-webkit-scrollbar { width: 4px; }
+    .tasks-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .task-item {
+      padding: 11px 13px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 3px;
+      transition: all 0.15s;
+      border: 1.5px solid transparent;
+    }
+
+    .task-item:hover { background: var(--bg); }
+    .task-item.active { background: var(--primary-light); border-color: #c7d2fe; }
+
+    .task-item-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .task-item.active .task-item-title { color: var(--primary); }
+
+    .task-item-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    .task-status {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 20px;
+      color: white;
+    }
+
+    .task-assignee {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .task-due {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-left: auto;
+    }
+
+    .task-detail {
+      padding: 24px;
+      overflow-y: auto;
+      height: 100%;
+    }
+
+    .task-detail-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .task-detail-info {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .task-detail-row {
+      display: flex;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .task-detail-label {
+      color: var(--text-muted);
+      font-weight: 600;
+      min-width: 60px;
+    }
+
+    .task-detail-desc {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text);
+      white-space: pre-wrap;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
 
     .empty-list {
       text-align: center;
@@ -531,12 +653,19 @@
       <div class="sidebar-header">
         <div class="sidebar-top">
           <span class="sidebar-title">📝 메모장</span>
-          <button class="btn-new" onclick="newNote()">+</button>
+          <button class="btn-new" id="btn-new-note" onclick="newNote()">+</button>
         </div>
-        <input class="search-box" type="text" placeholder="메모 검색..."
+        <div class="sidebar-tabs">
+          <button class="tab-btn active" id="tab-notes" onclick="switchTab('notes')">메모</button>
+          <button class="tab-btn" id="tab-clickup" onclick="switchTab('clickup')">ClickUp</button>
+        </div>
+        <input class="search-box" id="search-box-notes" type="text" placeholder="메모 검색..."
           oninput="searchNotes(this.value)" />
       </div>
       <div class="notes-list" id="notes-list">
+        <div class="empty-list">불러오는 중...</div>
+      </div>
+      <div class="tasks-list" id="tasks-list">
         <div class="empty-list">불러오는 중...</div>
       </div>
       <div class="sidebar-footer">
@@ -579,6 +708,8 @@
   const SUPABASE_URL = 'https://lmtdmubkmmuchomkbvwy.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtdGRtdWJrbW11Y2hvbWtidnd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNjI0NzUsImV4cCI6MjA5MzczODQ3NX0.4FZ9t356ZaWI52E0Mofruool2OUrTNp6kmgAOi6tkhA';
   const ADMIN_PASSWORD = 'admin1234'; // 변경 가능
+  const CLICKUP_TOKEN = 'pk_43586564_0YLCBJ33J3UIRLFWTJOEKO98AXN6IVZF';
+  const CLICKUP_LIST_ID = '900303022977'; // MFO - New work
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -587,6 +718,9 @@
   let currentNoteId = null;
   let logoClickCount = 0;
   let logoClickTimer = null;
+  let currentTab = 'notes';
+  let allTasks = [];
+  let currentTaskId = null;
 
   // ===== INIT =====
   function init() {
@@ -723,6 +857,113 @@
     const el = document.getElementById('admin-message');
     el.textContent = msg;
     el.className = 'admin-message' + (type ? ' ' + type : '');
+  }
+
+  // ===== CLICKUP =====
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('tab-notes').classList.toggle('active', tab === 'notes');
+    document.getElementById('tab-clickup').classList.toggle('active', tab === 'clickup');
+    document.getElementById('notes-list').style.display = tab === 'notes' ? '' : 'none';
+    document.getElementById('tasks-list').style.display = tab === 'clickup' ? '' : 'none';
+    document.getElementById('search-box-notes').style.display = tab === 'notes' ? '' : 'none';
+    document.getElementById('btn-new-note').style.display = tab === 'notes' ? '' : 'none';
+
+    if (tab === 'clickup' && allTasks.length === 0) {
+      loadClickUpTasks();
+    }
+
+    // 에디터 초기화
+    document.getElementById('editor-empty').style.display = 'flex';
+    document.getElementById('editor-main').style.display = 'none';
+    document.getElementById('editor').classList.remove('open');
+    currentNoteId = null;
+    currentTaskId = null;
+  }
+
+  async function loadClickUpTasks() {
+    document.getElementById('tasks-list').innerHTML = '<div class="empty-list">불러오는 중...</div>';
+    try {
+      const res = await fetch(
+        `https://api.clickup.com/api/v2/list/${CLICKUP_LIST_ID}/task?archived=false&subtasks=true&page=0`,
+        { headers: { 'Authorization': CLICKUP_TOKEN } }
+      );
+      const json = await res.json();
+      allTasks = json.tasks || [];
+      renderTasks(allTasks);
+    } catch (e) {
+      document.getElementById('tasks-list').innerHTML = '<div class="empty-list">불러오기 실패<br>CORS 또는 네트워크 오류</div>';
+    }
+  }
+
+  function renderTasks(tasks) {
+    const list = document.getElementById('tasks-list');
+    if (!tasks.length) {
+      list.innerHTML = '<div class="empty-list">태스크가 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = tasks.map(t => {
+      const statusColor = t.status?.color || '#87909e';
+      const statusName = t.status?.status || '';
+      const assignees = t.assignees?.map(a => a.username).join(', ') || '';
+      const due = t.due_date ? new Date(Number(t.due_date)).toLocaleDateString('ko-KR', {month:'2-digit',day:'2-digit'}) : '';
+      return `
+        <div class="task-item ${t.id === currentTaskId ? 'active' : ''}" onclick="openTask('${t.id}')">
+          <div class="task-item-title">${esc(t.name)}</div>
+          <div class="task-item-meta">
+            <span class="task-status" style="background:${statusColor}">${esc(statusName)}</span>
+            ${assignees ? `<span class="task-assignee">👤 ${esc(assignees)}</span>` : ''}
+            ${due ? `<span class="task-due">📅 ${due}</span>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function openTask(id) {
+    const task = allTasks.find(t => t.id === id);
+    if (!task) return;
+    currentTaskId = id;
+    renderTasks(allTasks);
+
+    const statusColor = task.status?.color || '#87909e';
+    const statusName = task.status?.status || '';
+    const assignees = task.assignees?.map(a => a.username).join(', ') || '-';
+    const due = task.due_date
+      ? new Date(Number(task.due_date)).toLocaleDateString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit'})
+      : '-';
+    const desc = task.description || '설명 없음';
+
+    document.getElementById('editor-empty').style.display = 'none';
+    document.getElementById('editor-main').style.display = 'none';
+
+    // 기존 task-detail 제거 후 재생성
+    const existing = document.getElementById('task-detail');
+    if (existing) existing.remove();
+
+    const detail = document.createElement('div');
+    detail.id = 'task-detail';
+    detail.className = 'task-detail';
+    detail.innerHTML = `
+      <div class="task-detail-title">${esc(task.name)}</div>
+      <div class="task-detail-info">
+        <div class="task-detail-row">
+          <span class="task-detail-label">상태</span>
+          <span class="task-status" style="background:${statusColor}">${esc(statusName)}</span>
+        </div>
+        <div class="task-detail-row">
+          <span class="task-detail-label">담당자</span>
+          <span>${esc(assignees)}</span>
+        </div>
+        <div class="task-detail-row">
+          <span class="task-detail-label">마감일</span>
+          <span>${due}</span>
+        </div>
+      </div>
+      <div class="task-detail-desc">${esc(desc)}</div>
+    `;
+    document.getElementById('editor').appendChild(detail);
+    document.getElementById('editor').classList.add('open');
   }
 
   // ===== NOTES =====
