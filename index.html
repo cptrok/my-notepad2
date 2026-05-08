@@ -727,12 +727,7 @@
 
   // ===== NOTES =====
   async function loadNotes() {
-    const { data, error } = await sb
-      .from('notes')
-      .select('*')
-      .eq('username', currentUsername)
-      .order('updated_at', { ascending: false });
-
+    const { data, error } = await sb.rpc('get_user_notes', { p_username: currentUsername });
     if (error) { console.error(error); return; }
     allNotes = data || [];
     renderList(allNotes);
@@ -789,18 +784,15 @@
     const content = document.getElementById('note-content').value.trim();
     if (!content) { showToast('내용을 입력하세요.'); return; }
 
-    if (currentNoteId) {
-      const { error } = await sb.from('notes')
-        .update({ title, content, updated_at: new Date().toISOString() })
-        .eq('id', currentNoteId)
-        .eq('username', currentUsername);
-      if (error) { showToast('저장에 실패했습니다.'); return; }
-    } else {
-      const { data, error } = await sb.from('notes')
-        .insert({ title, content, username: currentUsername })
-        .select().single();
-      if (error) { showToast('저장에 실패했습니다.'); return; }
-      currentNoteId = data.id;
+    const { data, error } = await sb.rpc('save_user_note', {
+      p_username: currentUsername,
+      p_id: currentNoteId || null,
+      p_title: title,
+      p_content: content
+    });
+    if (error) { showToast('저장에 실패했습니다.'); return; }
+    if (!currentNoteId) {
+      currentNoteId = data;
       document.getElementById('btn-delete').style.display = 'block';
     }
 
@@ -812,9 +804,10 @@
     if (!currentNoteId) return;
     if (!confirm('이 메모를 삭제할까요?')) return;
 
-    const { error } = await sb.from('notes').delete()
-      .eq('id', currentNoteId)
-      .eq('username', currentUsername);
+    const { error } = await sb.rpc('delete_user_note', {
+      p_username: currentUsername,
+      p_id: currentNoteId
+    });
     if (error) { showToast('삭제에 실패했습니다.'); return; }
 
     currentNoteId = null;
