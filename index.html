@@ -94,6 +94,29 @@
     .btn-primary:hover { background: #4338ca; }
     .btn-primary:active { transform: scale(0.98); }
 
+    .save-options {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .save-option {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .save-option input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
     .auth-message {
       font-size: 13px;
       margin-top: 12px;
@@ -459,6 +482,16 @@
       <input type="password" id="login-password" placeholder="비밀번호 입력"
         onkeydown="if(event.key==='Enter') login()" />
     </div>
+    <div class="save-options">
+      <label class="save-option">
+        <input type="checkbox" id="save-username" />
+        <span>아이디 저장</span>
+      </label>
+      <label class="save-option">
+        <input type="checkbox" id="save-password" />
+        <span>비밀번호 저장</span>
+      </label>
+    </div>
     <button class="btn btn-primary" onclick="login()">로그인</button>
     <div class="auth-message" id="auth-message"></div>
   </div>
@@ -562,6 +595,17 @@
       currentUsername = saved;
       showApp();
     } else {
+      // 저장된 아이디/비밀번호 복원
+      const savedId = localStorage.getItem('memo_saved_id');
+      const savedPw = localStorage.getItem('memo_saved_pw');
+      if (savedId) {
+        document.getElementById('login-username').value = savedId;
+        document.getElementById('save-username').checked = true;
+      }
+      if (savedPw) {
+        document.getElementById('login-password').value = savedPw;
+        document.getElementById('save-password').checked = true;
+      }
       showAuth();
     }
   }
@@ -594,6 +638,18 @@
     if (error || !data) {
       setAuthMsg('이름 또는 비밀번호가 틀렸습니다.', 'error');
       return;
+    }
+
+    // 아이디/비밀번호 저장 처리
+    if (document.getElementById('save-username').checked) {
+      localStorage.setItem('memo_saved_id', username);
+    } else {
+      localStorage.removeItem('memo_saved_id');
+    }
+    if (document.getElementById('save-password').checked) {
+      localStorage.setItem('memo_saved_pw', password);
+    } else {
+      localStorage.removeItem('memo_saved_pw');
     }
 
     currentUsername = username;
