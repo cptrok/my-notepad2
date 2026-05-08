@@ -661,8 +661,8 @@
         </div>
         <input class="search-box" id="search-box-notes" type="text" placeholder="메모 검색..."
           oninput="searchNotes(this.value)" />
-        <input class="search-box" id="search-box-clickup" type="text" placeholder="태스크 검색..."
-          oninput="searchTasks(this.value)" style="display:none" />
+        <input class="search-box" id="search-box-clickup" type="text" placeholder="검색어 입력 후 Enter"
+          onkeydown="if(event.key==='Enter') fetchTasksByKeyword(this.value)" style="display:none" />
       </div>
       <div class="notes-list" id="notes-list">
         <div class="empty-list">불러오는 중...</div>
@@ -872,8 +872,9 @@
     document.getElementById('search-box-clickup').style.display = tab === 'clickup' ? 'block' : 'none';
     document.getElementById('btn-new-note').style.display = tab === 'notes' ? 'flex' : 'none';
 
-    if (tab === 'clickup' && allTasks.length === 0) {
-      loadClickUpTasks();
+    if (tab === 'clickup') {
+      document.getElementById('tasks-list').innerHTML = '<div class="empty-list">검색어를 입력하고<br>Enter를 누르세요</div>';
+      allTasks = [];
     }
 
     // 에디터 초기화
@@ -884,26 +885,19 @@
     currentTaskId = null;
   }
 
-  async function loadClickUpTasks() {
-    document.getElementById('tasks-list').innerHTML = '<div class="empty-list">불러오는 중...</div>';
+  async function fetchTasksByKeyword(q) {
+    if (!q.trim()) return;
+    document.getElementById('tasks-list').innerHTML = '<div class="empty-list">검색 중...</div>';
     try {
-      let page = 0;
-      let fetched = [];
-      while (true) {
-        const res = await fetch(
-          `https://api.clickup.com/api/v2/list/${CLICKUP_LIST_ID}/task?archived=false&subtasks=true&page=${page}`,
-          { headers: { 'Authorization': CLICKUP_TOKEN } }
-        );
-        const json = await res.json();
-        const tasks = json.tasks || [];
-        fetched = fetched.concat(tasks);
-        if (tasks.length < 100) break;
-        page++;
-      }
-      allTasks = fetched;
+      const res = await fetch(
+        'https://api.clickup.com/api/v2/team/25540965/task?query=' + encodeURIComponent(q) + '&list_ids[]=' + CLICKUP_LIST_ID + '&subtasks=true',
+        { headers: { 'Authorization': CLICKUP_TOKEN } }
+      );
+      const json = await res.json();
+      allTasks = json.tasks || [];
       renderTasks(allTasks);
     } catch (e) {
-      document.getElementById('tasks-list').innerHTML = '<div class="empty-list">불러오기 실패<br>CORS 또는 네트워크 오류</div>';
+      document.getElementById('tasks-list').innerHTML = '<div class="empty-list">불러오기 실패<br>네트워크 오류</div>';
     }
   }
 
@@ -977,15 +971,6 @@
     document.getElementById('editor').classList.add('open');
   }
 
-  function searchTasks(q) {
-    if (!q.trim()) { renderTasks(allTasks); return; }
-    const lower = q.toLowerCase();
-    renderTasks(allTasks.filter(t =>
-      t.name.toLowerCase().includes(lower) ||
-      (t.description && t.description.toLowerCase().includes(lower)) ||
-      (t.assignees && t.assignees.some(a => a.username.toLowerCase().includes(lower)))
-    ));
-  }
 
   // ===== NOTES =====
   async function loadNotes() {
