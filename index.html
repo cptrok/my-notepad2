@@ -590,13 +590,13 @@
   function showApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-screen').style.display = 'block';
-    const username = currentUser.email.replace('@memo.local', '');
-    document.getElementById('user-email').textContent = username;
+    const { data: map } = await sb
+      .from('username_map')
+      .select('username')
+      .eq('email', currentUser.email)
+      .single();
+    document.getElementById('user-email').textContent = map?.username || currentUser.email;
     loadNotes();
-  }
-
-  function toEmail(username) {
-    return `${username.trim().toLowerCase()}@memo.local`;
   }
 
   async function login() {
@@ -605,7 +605,22 @@
     if (!username || !password) { setAuthMessage('이름과 비밀번호를 입력하세요.', 'error'); return; }
 
     setAuthMessage('로그인 중...', '');
-    const { error } = await sb.auth.signInWithPassword({ email: toEmail(username), password });
+
+    const { data: map, error: mapError } = await sb
+      .from('username_map')
+      .select('email')
+      .eq('username', username)
+      .single();
+
+    console.log('[1] username_map 조회:', map, mapError);
+
+    if (mapError || !map) {
+      setAuthMessage('이름 또는 비밀번호가 틀렸습니다.', 'error');
+      return;
+    }
+
+    const { error } = await sb.auth.signInWithPassword({ email: map.email, password });
+    console.log('[2] signInWithPassword 오류:', error);
     if (error) {
       setAuthMessage('이름 또는 비밀번호가 틀렸습니다.', 'error');
     }
