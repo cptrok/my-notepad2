@@ -63,29 +63,11 @@
       font-size: 13px;
     }
 
-    .auth-tabs {
-      display: flex;
-      border-bottom: 2px solid var(--border);
-      margin-bottom: 24px;
-    }
-
-    .auth-tab {
-      flex: 1;
-      padding: 10px;
+    .auth-subtitle {
       text-align: center;
-      cursor: pointer;
-      font-size: 15px;
+      font-size: 14px;
       color: var(--text-muted);
-      border-bottom: 2px solid transparent;
-      margin-bottom: -2px;
-      transition: all 0.2s;
-      font-weight: 500;
-    }
-
-    .auth-tab.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
-      font-weight: 600;
+      margin-bottom: 24px;
     }
 
     .form-group { margin-bottom: 14px; }
@@ -491,16 +473,13 @@
       <h1>📝 메모장</h1>
       <p>어디서든 나의 메모를 확인하세요</p>
     </div>
-    <div class="auth-tabs">
-      <div class="auth-tab active" onclick="switchTab('login')">로그인</div>
-      <div class="auth-tab" onclick="switchTab('signup')">회원가입</div>
-    </div>
+    <p class="auth-subtitle">이름과 비밀번호를 입력하세요</p>
 
     <!-- Login Form -->
     <div id="login-form">
       <div class="form-group">
-        <label>이메일</label>
-        <input type="email" id="login-email" placeholder="email@example.com" />
+        <label>이름</label>
+        <input type="text" id="login-username" placeholder="이름 입력" autocomplete="username" />
       </div>
       <div class="form-group">
         <label>비밀번호</label>
@@ -508,20 +487,6 @@
           onkeydown="if(event.key==='Enter') login()" />
       </div>
       <button class="btn btn-primary" onclick="login()">로그인</button>
-    </div>
-
-    <!-- Signup Form -->
-    <div id="signup-form" style="display:none">
-      <div class="form-group">
-        <label>이메일</label>
-        <input type="email" id="signup-email" placeholder="email@example.com" />
-      </div>
-      <div class="form-group">
-        <label>비밀번호 (6자 이상)</label>
-        <input type="password" id="signup-password" placeholder="비밀번호 입력"
-          onkeydown="if(event.key==='Enter') signup()" />
-      </div>
-      <button class="btn btn-primary" onclick="signup()">회원가입</button>
     </div>
 
     <div class="auth-message" id="auth-message"></div>
@@ -625,49 +590,24 @@
   function showApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-screen').style.display = 'block';
-    document.getElementById('user-email').textContent = currentUser.email;
+    const username = currentUser.email.replace('@memo.local', '');
+    document.getElementById('user-email').textContent = username;
     loadNotes();
   }
 
-  function switchTab(tab) {
-    document.querySelectorAll('.auth-tab').forEach((el, i) => {
-      el.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'signup'));
-    });
-    document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
-    document.getElementById('signup-form').style.display = tab === 'signup' ? 'block' : 'none';
-    setAuthMessage('', '');
+  function toEmail(username) {
+    return `${username.trim().toLowerCase()}@memo.local`;
   }
 
   async function login() {
-    const email = document.getElementById('login-email').value.trim();
+    const username = document.getElementById('login-username').value.trim();
     const password = document.getElementById('login-password').value;
-    if (!email || !password) { setAuthMessage('이메일과 비밀번호를 입력하세요.', 'error'); return; }
+    if (!username || !password) { setAuthMessage('이름과 비밀번호를 입력하세요.', 'error'); return; }
 
     setAuthMessage('로그인 중...', '');
-    const { error } = await sb.auth.signInWithPassword({ email, password });
+    const { error } = await sb.auth.signInWithPassword({ email: toEmail(username), password });
     if (error) {
-      setAuthMessage(
-        error.message.includes('Invalid') ? '이메일 또는 비밀번호가 틀렸습니다.' : error.message,
-        'error'
-      );
-    }
-  }
-
-  async function signup() {
-    const email = document.getElementById('signup-email').value.trim();
-    const password = document.getElementById('signup-password').value;
-    if (!email || !password) { setAuthMessage('이메일과 비밀번호를 입력하세요.', 'error'); return; }
-    if (password.length < 6) { setAuthMessage('비밀번호는 6자 이상이어야 합니다.', 'error'); return; }
-
-    setAuthMessage('가입 중...', '');
-    const { data, error } = await sb.auth.signUp({ email, password });
-    if (error) {
-      setAuthMessage(error.message, 'error');
-    } else if (data.user && !data.session) {
-      setAuthMessage('이메일을 확인하여 인증 후 로그인하세요.', 'success');
-      switchTab('login');
-    } else {
-      setAuthMessage('', '');
+      setAuthMessage('이름 또는 비밀번호가 틀렸습니다.', 'error');
     }
   }
 
