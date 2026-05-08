@@ -26,7 +26,7 @@
       overflow: hidden;
     }
 
-    /* ===== AUTH ===== */
+    /* AUTH */
     #auth-screen {
       display: flex;
       align-items: center;
@@ -104,7 +104,7 @@
     .auth-message.error { color: var(--danger); }
     .auth-message.success { color: var(--success); }
 
-    /* ===== ADMIN MODAL ===== */
+    /* ADMIN MODAL */
     #admin-overlay {
       display: none;
       position: fixed;
@@ -127,47 +127,22 @@
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     }
 
-    .admin-card h2 {
-      font-size: 18px;
-      font-weight: 700;
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 20px;
-      color: var(--text);
     }
 
+    .admin-header h2 { font-size: 18px; font-weight: 700; }
+
     .admin-close {
-      float: right;
       background: none;
       border: none;
       font-size: 20px;
       cursor: pointer;
       color: var(--text-muted);
-      margin-top: -4px;
     }
-
-    .admin-section { margin-bottom: 24px; }
-
-    .admin-section h3 {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 12px;
-    }
-
-    .btn-sm {
-      padding: 9px 16px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
-    }
-
-    .btn-success { background: var(--success); color: white; width: 100%; margin-top: 4px; }
-    .btn-success:hover { background: #059669; }
 
     .admin-message {
       font-size: 13px;
@@ -179,14 +154,26 @@
     .admin-message.error { color: var(--danger); }
     .admin-message.success { color: var(--success); }
 
-    .admin-hint {
-      font-size: 11px;
-      color: #94a3b8;
-      text-align: center;
-      margin-top: 16px;
+    .admin-hint { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 16px; }
+
+    .btn-success {
+      width: 100%;
+      padding: 11px;
+      background: var(--success);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 4px;
+      transition: background 0.2s;
     }
 
-    /* ===== APP ===== */
+    .btn-success:hover { background: #059669; }
+
+    /* APP */
     #app-screen { display: none; height: 100vh; }
 
     .app-layout { display: flex; height: 100vh; }
@@ -209,7 +196,7 @@
       margin-bottom: 10px;
     }
 
-    .sidebar-title { font-size: 17px; font-weight: 700; color: var(--text); }
+    .sidebar-title { font-size: 17px; font-weight: 700; }
 
     .btn-new {
       width: 34px;
@@ -224,7 +211,6 @@
       justify-content: center;
       font-size: 22px;
       font-weight: 300;
-      line-height: 1;
       transition: background 0.2s;
       flex-shrink: 0;
     }
@@ -264,7 +250,6 @@
     .note-item-title {
       font-size: 14px;
       font-weight: 600;
-      color: var(--text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -298,7 +283,6 @@
     .user-name {
       font-size: 13px;
       font-weight: 600;
-      color: var(--text);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -320,13 +304,7 @@
 
     .btn-logout:hover { color: var(--danger); border-color: var(--danger); }
 
-    .editor {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      background: white;
-    }
+    .editor { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: white; }
 
     .editor-empty {
       flex: 1;
@@ -375,7 +353,6 @@
       outline: none;
       font-size: 17px;
       font-weight: 700;
-      color: var(--text);
       background: transparent;
       font-family: inherit;
       min-width: 0;
@@ -419,7 +396,6 @@
       font-size: 13px;
       cursor: pointer;
       font-family: inherit;
-      transition: background 0.2s;
     }
 
     .btn-delete:hover { background: #fef2f2; }
@@ -432,7 +408,6 @@
       outline: none;
       font-size: 15px;
       line-height: 1.8;
-      color: var(--text);
       resize: none;
       background: transparent;
       font-family: inherit;
@@ -468,14 +443,13 @@
 </head>
 <body>
 
-<!-- Auth Screen -->
+<!-- 로그인 화면 -->
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
       <h1>📝 메모장</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
-
     <div class="form-group">
       <label>이름</label>
       <input type="text" id="login-username" placeholder="이름 입력" autocomplete="username" />
@@ -486,40 +460,37 @@
         onkeydown="if(event.key==='Enter') login()" />
     </div>
     <button class="btn btn-primary" onclick="login()">로그인</button>
-
     <div class="auth-message" id="auth-message"></div>
   </div>
 </div>
 
-<!-- Admin Overlay -->
+<!-- 관리자 패널 -->
 <div id="admin-overlay">
   <div class="admin-card">
-    <h2>⚙️ 관리자 패널 <button class="admin-close" onclick="closeAdmin()">✕</button></h2>
-
-    <div class="admin-section">
-      <h3>새 계정 추가</h3>
-      <div class="form-group">
-        <label>관리자 비밀번호</label>
-        <input type="password" id="admin-password" placeholder="관리자 비밀번호" />
-      </div>
-      <div class="form-group">
-        <label>이름</label>
-        <input type="text" id="new-username" placeholder="새 사용자 이름" />
-      </div>
-      <div class="form-group">
-        <label>비밀번호</label>
-        <input type="password" id="new-password" placeholder="새 사용자 비밀번호"
-          onkeydown="if(event.key==='Enter') createUser()" />
-      </div>
-      <button class="btn-sm btn-success" onclick="createUser()">계정 생성</button>
-      <div class="admin-message" id="admin-message"></div>
+    <div class="admin-header">
+      <h2>⚙️ 관리자 패널</h2>
+      <button class="admin-close" onclick="closeAdmin()">✕</button>
     </div>
-
-    <div class="admin-hint">로고를 5번 클릭하면 이 패널이 열립니다</div>
+    <div class="form-group">
+      <label>관리자 비밀번호</label>
+      <input type="password" id="admin-password" placeholder="관리자 비밀번호" />
+    </div>
+    <div class="form-group">
+      <label>새 사용자 이름</label>
+      <input type="text" id="new-username" placeholder="이름 입력" />
+    </div>
+    <div class="form-group">
+      <label>새 사용자 비밀번호</label>
+      <input type="password" id="new-password" placeholder="비밀번호 입력"
+        onkeydown="if(event.key==='Enter') createUser()" />
+    </div>
+    <button class="btn-success" onclick="createUser()">계정 생성</button>
+    <div class="admin-message" id="admin-message"></div>
+    <div class="admin-hint">로고를 5번 클릭하면 열립니다</div>
   </div>
 </div>
 
-<!-- App Screen -->
+<!-- 앱 화면 -->
 <div id="app-screen">
   <div class="app-layout">
 
@@ -527,7 +498,7 @@
       <div class="sidebar-header">
         <div class="sidebar-top">
           <span class="sidebar-title">📝 메모장</span>
-          <button class="btn-new" onclick="newNote()" title="새 메모">+</button>
+          <button class="btn-new" onclick="newNote()">+</button>
         </div>
         <input class="search-box" type="text" placeholder="메모 검색..."
           oninput="searchNotes(this.value)" />
@@ -574,39 +545,25 @@
 <script>
   const SUPABASE_URL = 'https://lmtdmubkmmuchomkbvwy.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtdGRtdWJrbW11Y2hvbWtidnd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNjI0NzUsImV4cCI6MjA5MzczODQ3NX0.4FZ9t356ZaWI52E0Mofruool2OUrTNp6kmgAOi6tkhA';
-  const ADMIN_PASSWORD = 'admin1234'; // 원하시면 변경하세요
+  const ADMIN_PASSWORD = 'admin1234'; // 변경 가능
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  let currentUser = null;
-  let currentUsername = '';
+  let currentUsername = null;
   let allNotes = [];
   let currentNoteId = null;
   let logoClickCount = 0;
   let logoClickTimer = null;
 
   // ===== INIT =====
-  async function init() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      currentUser = session.user;
-      await showApp();
+  function init() {
+    const saved = localStorage.getItem('memo_user');
+    if (saved) {
+      currentUsername = saved;
+      showApp();
     } else {
       showAuth();
     }
-
-    sb.auth.onAuthStateChange(async (_event, session) => {
-      if (session) {
-        currentUser = session.user;
-        await showApp();
-      } else {
-        currentUser = null;
-        currentUsername = '';
-        allNotes = [];
-        currentNoteId = null;
-        showAuth();
-      }
-    });
   }
 
   // ===== AUTH =====
@@ -615,17 +572,9 @@
     document.getElementById('app-screen').style.display = 'none';
   }
 
-  async function showApp() {
+  function showApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-screen').style.display = 'block';
-
-    const { data: map } = await sb
-      .from('username_map')
-      .select('username')
-      .eq('email', currentUser.email)
-      .single();
-
-    currentUsername = map?.username || currentUser.email;
     document.getElementById('user-name').textContent = currentUsername;
     loadNotes();
   }
@@ -637,25 +586,30 @@
 
     setAuthMsg('로그인 중...', '');
 
-    const { data: map, error: mapError } = await sb
-      .from('username_map')
-      .select('email')
-      .eq('username', username)
-      .single();
+    const { data, error } = await sb.rpc('verify_login', {
+      p_username: username,
+      p_password: password
+    });
 
-    if (mapError || !map) {
+    if (error || !data) {
       setAuthMsg('이름 또는 비밀번호가 틀렸습니다.', 'error');
       return;
     }
 
-    const { error } = await sb.auth.signInWithPassword({ email: map.email, password });
-    if (error) {
-      setAuthMsg('이름 또는 비밀번호가 틀렸습니다.', 'error');
-    }
+    currentUsername = username;
+    localStorage.setItem('memo_user', username);
+    showApp();
   }
 
-  async function logout() {
-    await sb.auth.signOut();
+  function logout() {
+    localStorage.removeItem('memo_user');
+    currentUsername = null;
+    allNotes = [];
+    currentNoteId = null;
+    document.getElementById('editor-empty').style.display = 'flex';
+    document.getElementById('editor-main').style.display = 'none';
+    document.getElementById('editor').classList.remove('open');
+    showAuth();
   }
 
   function setAuthMsg(msg, type) {
@@ -688,39 +642,19 @@
     const newUsername = document.getElementById('new-username').value.trim();
     const newPassword = document.getElementById('new-password').value;
 
-    if (adminPass !== ADMIN_PASSWORD) {
-      setAdminMsg('관리자 비밀번호가 틀렸습니다.', 'error'); return;
-    }
-    if (!newUsername || !newPassword) {
-      setAdminMsg('이름과 비밀번호를 입력하세요.', 'error'); return;
-    }
-    if (newPassword.length < 6) {
-      setAdminMsg('비밀번호는 6자 이상이어야 합니다.', 'error'); return;
-    }
+    if (adminPass !== ADMIN_PASSWORD) { setAdminMsg('관리자 비밀번호가 틀렸습니다.', 'error'); return; }
+    if (!newUsername || !newPassword) { setAdminMsg('이름과 비밀번호를 입력하세요.', 'error'); return; }
 
-    const existing = await sb.from('username_map').select('username').eq('username', newUsername).single();
-    if (existing.data) {
-      setAdminMsg('이미 존재하는 이름입니다.', 'error'); return;
-    }
+    setAdminMsg('생성 중...', '');
 
-    setAdminMsg('계정 생성 중...', '');
+    const { data, error } = await sb.rpc('create_memo_user', {
+      p_username: newUsername,
+      p_password: newPassword
+    });
 
-    const email = crypto.randomUUID() + '@memo.local';
-    const { data, error: signUpError } = await sb.auth.signUp({ email, password: newPassword });
-
-    if (signUpError) {
-      setAdminMsg('오류: ' + signUpError.message, 'error'); return;
-    }
-
-    const { error: mapError } = await sb.from('username_map').insert({ username: newUsername, email });
-
-    if (mapError) {
-      setAdminMsg('오류: ' + mapError.message, 'error'); return;
-    }
-
-    // 새로 생성된 계정으로 자동 로그인됐을 경우 로그아웃
-    if (data.session) {
-      await sb.auth.signOut();
+    if (error) {
+      setAdminMsg(error.message.includes('이미 존재') ? '이미 존재하는 이름입니다.' : '오류: ' + error.message, 'error');
+      return;
     }
 
     setAdminMsg('✓ ' + newUsername + ' 계정이 생성됐습니다!', 'success');
@@ -739,6 +673,7 @@
     const { data, error } = await sb
       .from('notes')
       .select('*')
+      .eq('username', currentUsername)
       .order('updated_at', { ascending: false });
 
     if (error) { console.error(error); return; }
@@ -800,11 +735,12 @@
     if (currentNoteId) {
       const { error } = await sb.from('notes')
         .update({ title, content, updated_at: new Date().toISOString() })
-        .eq('id', currentNoteId);
+        .eq('id', currentNoteId)
+        .eq('username', currentUsername);
       if (error) { showToast('저장에 실패했습니다.'); return; }
     } else {
       const { data, error } = await sb.from('notes')
-        .insert({ title, content, user_id: currentUser.id })
+        .insert({ title, content, username: currentUsername })
         .select().single();
       if (error) { showToast('저장에 실패했습니다.'); return; }
       currentNoteId = data.id;
@@ -819,7 +755,9 @@
     if (!currentNoteId) return;
     if (!confirm('이 메모를 삭제할까요?')) return;
 
-    const { error } = await sb.from('notes').delete().eq('id', currentNoteId);
+    const { error } = await sb.from('notes').delete()
+      .eq('id', currentNoteId)
+      .eq('username', currentUsername);
     if (error) { showToast('삭제에 실패했습니다.'); return; }
 
     currentNoteId = null;
