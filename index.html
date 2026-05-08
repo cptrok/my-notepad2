@@ -661,6 +661,8 @@
         </div>
         <input class="search-box" id="search-box-notes" type="text" placeholder="메모 검색..."
           oninput="searchNotes(this.value)" />
+        <input class="search-box" id="search-box-clickup" type="text" placeholder="태스크 검색..."
+          oninput="searchTasks(this.value)" style="display:none" />
       </div>
       <div class="notes-list" id="notes-list">
         <div class="empty-list">불러오는 중...</div>
@@ -867,6 +869,7 @@
     document.getElementById('notes-list').style.display = tab === 'notes' ? 'block' : 'none';
     document.getElementById('tasks-list').style.display = tab === 'clickup' ? 'block' : 'none';
     document.getElementById('search-box-notes').style.display = tab === 'notes' ? 'block' : 'none';
+    document.getElementById('search-box-clickup').style.display = tab === 'clickup' ? 'block' : 'none';
     document.getElementById('btn-new-note').style.display = tab === 'notes' ? 'flex' : 'none';
 
     if (tab === 'clickup' && allTasks.length === 0) {
@@ -972,6 +975,16 @@
     `;
     document.getElementById('editor').appendChild(detail);
     document.getElementById('editor').classList.add('open');
+  }
+
+  function searchTasks(q) {
+    if (!q.trim()) { renderTasks(allTasks); return; }
+    const lower = q.toLowerCase();
+    renderTasks(allTasks.filter(t =>
+      t.name.toLowerCase().includes(lower) ||
+      (t.description && t.description.toLowerCase().includes(lower)) ||
+      (t.assignees && t.assignees.some(a => a.username.toLowerCase().includes(lower)))
+    ));
   }
 
   // ===== NOTES =====
