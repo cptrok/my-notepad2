@@ -906,15 +906,24 @@
     if (!q.trim()) return;
     document.getElementById('tasks-list').innerHTML = '<div class="empty-list">검색 중...</div>';
     try {
-      const res = await fetch(
-        'https://api.clickup.com/api/v2/team/25540965/task?query=' + encodeURIComponent(q) + '&list_ids[]=' + CLICKUP_LIST_ID + '&subtasks=true',
-        { headers: { 'Authorization': CLICKUP_TOKEN } }
-      );
-      const json = await res.json();
-      allTasks = json.tasks || [];
+      let page = 0;
+      let fetched = [];
+      while (true) {
+        const res = await fetch(
+          'https://api.clickup.com/api/v2/list/' + CLICKUP_LIST_ID + '/task?subtasks=true&include_closed=true&page=' + page,
+          { headers: { 'Authorization': CLICKUP_TOKEN } }
+        );
+        const json = await res.json();
+        const tasks = json.tasks || [];
+        fetched = fetched.concat(tasks);
+        if (tasks.length < 100) break;
+        page++;
+      }
+      const keyword = q.trim().toLowerCase();
+      allTasks = fetched.filter(t => t.name && t.name.toLowerCase().includes(keyword));
       renderTasks(allTasks);
     } catch (e) {
-      document.getElementById('tasks-list').innerHTML = '<div class="empty-list">불러오기 실패<br>네트워크 오류</div>';
+      document.getElementById('tasks-list').innerHTML = '<div class="empty-list">불러오기 실패<br>' + e.message + '</div>';
     }
   }
 
