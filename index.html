@@ -735,7 +735,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v6</h1>
+      <h1>📝 록근_v7</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -813,7 +813,7 @@
     <div class="form-group">
       <label>ClickUp API 토큰</label>
       <input type="text" id="settings-clickup-token" placeholder="pk_..." />
-      <div class="input-hint">개인 API 토큰을 입력하면 내 일감 기능이 활성화됩니다</div>
+      <div class="input-hint">개인 API 토큰을 입력하면 내 태스크 기능이 활성화됩니다</div>
     </div>
     <button class="btn-success" onclick="saveProfile()">저장</button>
     <div class="settings-message" id="settings-message"></div>
@@ -837,13 +837,16 @@
         <input class="search-box" id="search-box-notes" type="text" placeholder="메모 검색..."
           oninput="searchNotes(this.value)" />
         <div id="clickup-search-wrap" style="display:none; flex-direction:column; gap:6px;">
-          <div style="display:flex; flex-direction:row; gap:6px; align-items:center;">
+          <div class="sidebar-tabs" style="margin-bottom:0;">
+            <button class="tab-btn active" id="cu-tab-my" onclick="switchCuTab('my')">내 태스크</button>
+            <button class="tab-btn" id="cu-tab-search" onclick="switchCuTab('search')">태스크 조회</button>
+          </div>
+          <div id="cu-search-row" style="display:none; flex-direction:row; gap:6px; align-items:center;">
             <input class="search-box" id="search-box-clickup" type="text" placeholder="검색어 입력"
               onkeydown="if(event.key==='Enter') fetchTasksByKeyword(this.value)"
               style="margin:0; flex:1; width:0;" />
             <button class="btn-search-clickup" onclick="fetchTasksByKeyword(document.getElementById('search-box-clickup').value)">🔍</button>
           </div>
-          <button class="btn-my-tasks" id="btn-my-tasks" onclick="fetchMyTasks()">👤 내 일감</button>
         </div>
       </div>
       <div class="notes-list" id="notes-list">
@@ -905,6 +908,7 @@
   let logoClickCount = 0;
   let logoClickTimer = null;
   let currentTab = 'notes';
+  let cuSubTab = 'my';   // 'my' | 'search'
   let allTasks = [];
   let currentTaskId = null;
   let cuPage = 0;        // ClickUp API 페이지
@@ -1141,8 +1145,8 @@
     document.getElementById('btn-new-note').style.display = tab === 'notes' ? 'flex' : 'none';
 
     if (tab === 'clickup') {
-      document.getElementById('tasks-list').innerHTML = '<div class="empty-list">검색어를 입력하고<br>Enter를 누르세요</div>';
-      allTasks = [];
+      cuSubTab = 'my';
+      switchCuTab('my');
     }
 
     // 에디터 초기화
@@ -1151,6 +1155,29 @@
     document.getElementById('editor').classList.remove('open');
     currentNoteId = null;
     currentTaskId = null;
+  }
+
+  function switchCuTab(tab) {
+    cuSubTab = tab;
+    document.getElementById('cu-tab-my').classList.toggle('active', tab === 'my');
+    document.getElementById('cu-tab-search').classList.toggle('active', tab === 'search');
+    document.getElementById('cu-search-row').style.display = tab === 'search' ? 'flex' : 'none';
+
+    // 에디터 초기화
+    const existing = document.getElementById('task-detail');
+    if (existing) existing.remove();
+    document.getElementById('editor-empty').style.display = 'flex';
+    document.getElementById('editor').classList.remove('open');
+    currentTaskId = null;
+
+    if (tab === 'my') {
+      fetchMyTasks();
+    } else {
+      cuFiltered = [];
+      allTasks = [];
+      document.getElementById('tasks-list').innerHTML = '<div class="empty-list">검색어를 입력하고<br>Enter를 누르세요</div>';
+      document.getElementById('search-box-clickup').value = '';
+    }
   }
 
   async function fetchMyTasks() {
