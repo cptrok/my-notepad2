@@ -513,6 +513,30 @@
     }
     .attachment-dl-btn:hover { background: var(--primary); color: white; }
 
+    .trial-quarter-item {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      transition: background 0.15s;
+    }
+    .trial-quarter-item:hover { background: var(--primary-light); }
+    .trial-quarter-item.active { background: #e8eeff; border-left: 3px solid var(--primary); color: var(--primary); }
+
+    .trial-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 20px 0 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .trial-section-title:first-child { margin-top: 0; }
+
     .license-task-item {
       padding: 12px 16px;
       border-bottom: 1px solid var(--border);
@@ -894,7 +918,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v49</h1>
+      <h1>📝 록근_v50</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1012,6 +1036,15 @@
               oninput="filterMyTasks(this.value)"
               style="margin:0; flex:1; width:0;" />
             <button class="btn-search-clickup" onclick="fetchMyTasks(true)" title="새로고침">🔍</button>
+          </div>
+        <div id="license-ctrl-wrap" style="display:none; flex-direction:column; gap:6px;">
+          <div class="sidebar-tabs" style="margin-bottom:0;">
+            <button class="tab-btn active" id="lic-tab-my" onclick="switchLicTab('my')">내 태스크</button>
+            <button class="tab-btn" id="lic-tab-trial" onclick="switchLicTab('trial')">주기적 트라이얼</button>
+          </div>
+          <div id="trial-doc-row" style="display:none; gap:4px; flex-wrap:wrap;">
+            <button class="tab-btn active" id="trial-doc-0" onclick="loadTrialPages('rbeb5-147183')" style="font-size:11px; padding:5px 8px;">라이선스</button>
+            <button class="tab-btn" id="trial-doc-1" onclick="loadTrialPages('rbeb5-147203')" style="font-size:11px; padding:5px 8px;">중앙관리라이선스</button>
           </div>
         </div>
       </div>
@@ -1321,6 +1354,7 @@
     document.getElementById('license-list').style.display = tab === 'license' ? 'block' : 'none';
     document.getElementById('search-box-notes').style.display = tab === 'notes' ? 'block' : 'none';
     document.getElementById('clickup-search-wrap').style.display = tab === 'clickup' ? 'flex' : 'none';
+    document.getElementById('license-ctrl-wrap').style.display = tab === 'license' ? 'flex' : 'none';
     document.getElementById('btn-new-note').style.display = tab === 'notes' ? 'flex' : 'none';
 
     if (tab === 'clickup') {
@@ -1328,7 +1362,7 @@
       switchCuTab('search');
     }
     if (tab === 'license') {
-      loadLicenseTasks();
+      switchLicTab('my');
     }
 
     // 에디터 초기화
@@ -1779,6 +1813,146 @@
   }
 
   // ===== LICENSE =====
+  let licSubTab = 'my';
+
+  function switchLicTab(tab) {
+    licSubTab = tab;
+    document.getElementById('lic-tab-my').classList.toggle('active', tab === 'my');
+    document.getElementById('lic-tab-trial').classList.toggle('active', tab === 'trial');
+    document.getElementById('trial-doc-row').style.display = tab === 'trial' ? 'flex' : 'none';
+
+    // 에디터 초기화
+    const existing = document.getElementById('task-detail');
+    if (existing) existing.remove();
+    const tp = document.getElementById('trial-panel');
+    if (tp) tp.remove();
+    document.getElementById('editor-empty').style.display = 'flex';
+    document.getElementById('editor').classList.remove('open');
+    currentLicenseTaskId = null;
+
+    if (tab === 'my') {
+      loadLicenseTasks();
+    } else {
+      document.getElementById('license-list').innerHTML = '<div class="empty-list">분기를 선택하세요.</div>';
+      loadTrialPages(trialDocIdActive);
+    }
+  }
+
+  // ===== TRIAL =====
+  const TRIAL_DOCS = [
+    { id: 'rbeb5-147183', name: '라이선스' },
+    { id: 'rbeb5-147203', name: '중앙관리라이선스' }
+  ];
+  let trialDocIdActive = 'rbeb5-147183';
+  let trialPagesCache = {};
+  let trialSelectedQuarter = null;
+
+  async function loadTrialPages(docId) {
+    trialDocIdActive = docId;
+    document.getElementById('trial-doc-0').classList.toggle('active', docId === 'rbeb5-147183');
+    document.getElementById('trial-doc-1').classList.toggle('active', docId === 'rbeb5-147203');
+
+    // 에디터 초기화
+    const tp = document.getElementById('trial-panel');
+    if (tp) tp.remove();
+    document.getElementById('editor-empty').style.display = 'flex';
+    document.getElementById('editor').classList.remove('open');
+    trialSelectedQuarter = null;
+
+    if (trialPagesCache[docId]) {
+      renderTrialQuarters(trialPagesCache[docId]);
+      return;
+    }
+
+    document.getElementById('license-list').innerHTML = '<div class="empty-list">불러오는 중...</div>';
+    const res = await fetch(
+      `https://api.clickup.com/api/v3/workspaces/25540965/docs/${docId}/pages`,
+      { headers: { Authorization: CLICKUP_TOKEN } }
+    );
+    const data = await res.json();
+    const pages = (data.pages || [])
+      .filter(p => /^\d{4}\/\dQ$/.test(p.name))
+      .sort((a, b) => b.name.localeCompare(a.name));
+    trialPagesCache[docId] = pages;
+    renderTrialQuarters(pages);
+  }
+
+  function renderTrialQuarters(pages) {
+    const list = document.getElementById('license-list');
+    if (!pages.length) {
+      list.innerHTML = '<div class="empty-list">분기 데이터가 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = pages.map(p => `
+      <div class="trial-quarter-item ${p.id === trialSelectedQuarter ? 'active' : ''}"
+        onclick="loadTrialPage('${trialDocIdActive}','${p.id}','${p.name}')">
+        ${esc(p.name)}
+      </div>
+    `).join('');
+  }
+
+  async function loadTrialPage(docId, pageId, pageName) {
+    trialSelectedQuarter = pageId;
+    renderTrialQuarters(trialPagesCache[docId] || []);
+
+    const existing = document.getElementById('trial-panel');
+    if (existing) existing.remove();
+    document.getElementById('editor-empty').style.display = 'none';
+    document.getElementById('editor-main').style.display = 'none';
+
+    const loading = document.createElement('div');
+    loading.id = 'trial-panel';
+    loading.className = 'task-detail';
+    loading.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:48px;">불러오는 중...</div>';
+    document.getElementById('editor').appendChild(loading);
+    document.getElementById('editor').classList.add('open');
+
+    const res = await fetch(
+      `https://api.clickup.com/api/v3/workspaces/25540965/docs/${docId}/pages/${pageId}?content_format=text%2Fmd`,
+      { headers: { Authorization: CLICKUP_TOKEN } }
+    );
+    const data = await res.json();
+    const sections = parseTrialMarkdown(data.content || '');
+
+    const panel = document.createElement('div');
+    panel.id = 'trial-panel';
+    panel.className = 'task-detail';
+    panel.innerHTML = `
+      <div style="font-size:18px;font-weight:700;margin-bottom:20px;">${esc(pageName)} 트라이얼 라이선스</div>
+      ${sections.map(s => `
+        <div class="trial-section-title">${esc(s.name)}</div>
+        <div class="task-attachments-grid" style="margin-bottom:12px;">
+          ${s.files.map(f => `
+            <button class="attachment-dl-btn" onclick="downloadAttachment('${f.url}','${esc(f.name)}')">
+              ⬇ ${esc(f.name)}
+            </button>
+          `).join('')}
+        </div>
+      `).join('')}
+    `;
+    loading.replaceWith(panel);
+  }
+
+  function parseTrialMarkdown(content) {
+    const sections = [];
+    let current = null;
+    for (const line of content.split('\n')) {
+      const link = line.match(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/);
+      if (link) {
+        if (!current) { current = { name: '기타', files: [] }; sections.push(current); }
+        current.files.push({ name: link[1], url: link[2] });
+      } else {
+        const t = line.trim();
+        if (t && !t.startsWith('*') && !t.startsWith('`') && !t.startsWith('{')
+            && !t.startsWith('}') && !t.startsWith('"') && !t.startsWith('[')) {
+          current = { name: t, files: [] };
+          sections.push(current);
+        }
+      }
+    }
+    return sections.filter(s => s.files.length > 0);
+  }
+
   let licenseTasks = [];
   let licenseLoaded = false;
   let currentLicenseTaskId = null;
