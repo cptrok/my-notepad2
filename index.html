@@ -879,7 +879,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v40</h1>
+      <h1>📝 록근_v41</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1831,6 +1831,14 @@
     const due = task.due_date ? new Date(Number(task.due_date)).toLocaleDateString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit'}) : '-';
     const listName = task.list?.name || '';
     const folderName = task.folder?.name || '';
+    const desc = task.description?.trim() || '';
+
+    const descHtml = desc ? `
+      <div class="task-attachments">
+        <div class="task-attachments-title">설명</div>
+        <div class="task-detail-desc" style="white-space:pre-wrap;">${esc(desc)}</div>
+      </div>
+    ` : '';
 
     const attachmentsHtml = attachments.length ? `
       <div class="task-attachments">
@@ -1864,6 +1872,7 @@
           <span>${due}</span>
         </div>
       </div>
+      ${descHtml}
       ${attachmentsHtml}
     `;
     document.getElementById('editor').appendChild(detail);
