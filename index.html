@@ -810,7 +810,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v24</h1>
+      <h1>📝 록근_v25</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -974,7 +974,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/quill-image-resize-module@3.0.0/image-resize.min.js"></script>
 <script>
   const SUPABASE_URL = 'https://lmtdmubkmmuchomkbvwy.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtdGRtdWJrbW11Y2hvbWtidnd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNjI0NzUsImV4cCI6MjA5MzczODQ3NX0.4FZ9t356ZaWI52E0Mofruool2OUrTNp6kmgAOi6tkhA';
@@ -1494,55 +1493,43 @@
   let quill = null;
 
   function initQuill() {
-    try {
-      if (typeof ImageResize !== 'undefined') {
-        Quill.register('modules/imageResize', ImageResize);
-      }
-    } catch(e) {}
-
-    const modules = {
-      toolbar: {
-        container: [
-          ['bold', 'italic', 'underline', 'strike'],
-          [{ header: [1, 2, 3, false] }],
-          [{ list: 'ordered' }, { list: 'bullet' }],
-          ['link', 'image'],
-          ['clean']
-        ],
-        handlers: {
-          image: function() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.click();
-            input.onchange = async () => {
-              const file = input.files[0];
-              if (!file) return;
-              showToast('이미지 처리 중...');
-              const resized = await resizeImage(file, 1200, 1200, 0.85);
-              showToast('이미지 업로드 중...');
-              const fileName = `${currentUsername}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
-              const { error } = await sb.storage.from('memo-images').upload(fileName, resized, { contentType: 'image/jpeg' });
-              if (error) { showToast('업로드 실패: ' + error.message); return; }
-              const { data } = sb.storage.from('memo-images').getPublicUrl(fileName);
-              const range = quill.getSelection(true);
-              quill.insertEmbed(range.index, 'image', data.publicUrl);
-              quill.setSelection(range.index + 1);
-              showToast('이미지 삽입 완료!');
-            };
-          }
-        }
-      }
-    };
-
-    if (typeof ImageResize !== 'undefined') {
-      modules.imageResize = { displaySize: true };
-    }
-
     quill = new Quill('#quill-editor', {
       theme: 'snow',
       placeholder: '메모를 입력하세요...',
-      modules
+      modules: {
+        toolbar: {
+          container: [
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ header: [1, 2, 3, false] }],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            ['link', 'image'],
+            ['clean']
+          ],
+          handlers: {
+            image: function() {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.click();
+              input.onchange = async () => {
+                const file = input.files[0];
+                if (!file) return;
+                showToast('이미지 처리 중...');
+                const resized = await resizeImage(file, 1200, 1200, 0.85);
+                showToast('이미지 업로드 중...');
+                const fileName = `${currentUsername}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+                const { error } = await sb.storage.from('memo-images').upload(fileName, resized, { contentType: 'image/jpeg' });
+                if (error) { showToast('업로드 실패: ' + error.message); return; }
+                const { data } = sb.storage.from('memo-images').getPublicUrl(fileName);
+                const range = quill.getSelection(true);
+                quill.insertEmbed(range.index, 'image', data.publicUrl);
+                quill.setSelection(range.index + 1);
+                showToast('이미지 삽입 완료!');
+              };
+            }
+          }
+        }
+      }
     });
   }
 
