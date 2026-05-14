@@ -407,12 +407,15 @@
     }
 
     .task-detail-title {
+      display: block;
       font-size: 20px;
       font-weight: 700;
       color: var(--text);
       margin-bottom: 16px;
       line-height: 1.4;
+      text-decoration: none;
     }
+    .task-detail-title:hover { color: var(--primary); text-decoration: underline; }
 
     .task-detail-info {
       display: flex;
@@ -735,7 +738,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v11</h1>
+      <h1>📝 록근_v12</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1369,7 +1372,7 @@
     detail.id = 'task-detail';
     detail.className = 'task-detail';
     detail.innerHTML = `
-      <div class="task-detail-title">${esc(task.name)}</div>
+      <a class="task-detail-title" href="https://app.clickup.com/t/${task.id}" target="_blank" rel="noopener">${esc(task.name)}</a>
       <div class="task-detail-info">
         <div class="task-detail-row">
           <span class="task-detail-label">상태</span>
