@@ -728,7 +728,7 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtdGRtdWJrbW11Y2hvbWtidnd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNjI0NzUsImV4cCI6MjA5MzczODQ3NX0.4FZ9t356ZaWI52E0Mofruool2OUrTNp6kmgAOi6tkhA';
   const ADMIN_PASSWORD = 'admin1234'; // 변경 가능
   const CLICKUP_TOKEN = 'pk_43586564_0YLCBJ33J3UIRLFWTJOEKO98AXN6IVZF';
-  const CLICKUP_LIST_ID = '900303022977'; // MFO - New work
+  const CLICKUP_LIST_ID = '900305507661'; // [DEQ]협업시스템
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -907,7 +907,7 @@
     document.getElementById('tasks-list').innerHTML = '<div class="empty-list">검색 중...</div>';
     try {
       const res = await fetch(
-        'https://api.clickup.com/api/v2/team/25540965/task?query=' + encodeURIComponent(q) + '&subtasks=true',
+        'https://api.clickup.com/api/v2/team/25540965/task?query=' + encodeURIComponent(q) + '&list_ids[]=' + CLICKUP_LIST_ID + '&subtasks=true',
         { headers: { 'Authorization': CLICKUP_TOKEN } }
       );
       const json = await res.json();
