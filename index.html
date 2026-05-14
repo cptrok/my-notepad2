@@ -879,7 +879,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v39</h1>
+      <h1>📝 록근_v40</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1772,10 +1772,11 @@
   async function loadLicenseTasks() {
     if (licenseLoaded) { renderLicenseList(); return; }
     document.getElementById('license-list').innerHTML = '<div class="empty-list">불러오는 중...</div>';
+    const userId = CLICKUP_TOKEN.split('_')[1];
     let all = [];
     let page = 0;
     while (true) {
-      const url = `https://api.clickup.com/api/v2/team/${TEAM_ID}/task?space_ids[]=${LICENSE_SPACE_ID}&statuses[]=in%20progress&page=${page}&subtasks=true&include_closed=false`;
+      const url = `https://api.clickup.com/api/v2/team/${TEAM_ID}/task?space_ids[]=${LICENSE_SPACE_ID}&statuses[]=in%20progress&assignees[]=${userId}&page=${page}&subtasks=true&include_closed=false`;
       const res = await fetch(url, { headers: { Authorization: CLICKUP_TOKEN } });
       const data = await res.json();
       if (!data.tasks || data.tasks.length === 0) break;
