@@ -810,7 +810,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v21</h1>
+      <h1>📝 록근_v22</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1514,10 +1514,11 @@
               input.onchange = async () => {
                 const file = input.files[0];
                 if (!file) return;
+                showToast('이미지 처리 중...');
+                const resized = await resizeImage(file, 1200, 1200, 0.85);
                 showToast('이미지 업로드 중...');
-                const ext = file.name.split('.').pop();
-                const fileName = `${currentUsername}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-                const { error } = await sb.storage.from('memo-images').upload(fileName, file);
+                const fileName = `${currentUsername}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+                const { error } = await sb.storage.from('memo-images').upload(fileName, resized, { contentType: 'image/jpeg' });
                 if (error) { showToast('업로드 실패: ' + error.message); return; }
                 const { data } = sb.storage.from('memo-images').getPublicUrl(fileName);
                 const range = quill.getSelection(true);
@@ -1529,6 +1530,28 @@
           }
         }
       }
+    });
+  }
+
+  function resizeImage(file, maxW, maxH, quality) {
+    return new Promise(resolve => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width > maxW || height > maxH) {
+          const ratio = Math.min(maxW / width, maxH / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob(resolve, 'image/jpeg', quality);
+      };
+      img.src = url;
     });
   }
 
