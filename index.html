@@ -861,7 +861,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v35</h1>
+      <h1>📝 록근_v36</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1783,6 +1783,16 @@
     if (error) { console.error(error); return; }
     allNotes = data || [];
     renderList(allNotes);
+    // 현재 열린 메모가 있으면 내용도 갱신
+    if (currentNoteId) {
+      const note = allNotes.find(n => n.id === currentNoteId);
+      if (note) {
+        document.getElementById('note-title').value = note.title || '';
+        const sel = quill.getSelection();
+        quill.clipboard.dangerouslyPasteHTML(note.content || '');
+        if (sel) quill.setSelection(sel);
+      }
+    }
   }
 
   function renderList(notes) {
