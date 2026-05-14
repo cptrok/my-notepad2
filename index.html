@@ -660,7 +660,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v2</h1>
+      <h1>📝 록근_v3</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -972,24 +972,8 @@
     list.innerHTML = '<div class="loading-wrap"><div class="spinner"></div>내 일감 불러오는 중...</div>';
 
     try {
-      // 워크스페이스 멤버 조회 → 현재 사용자 ID 찾기
-      const memberRes = await fetch('https://api.clickup.com/api/v2/team/25540965/member',
-        { headers: { 'Authorization': CLICKUP_TOKEN } });
-      const memberJson = await memberRes.json();
-      const members = memberJson.members || [];
-      const me = members.find(m =>
-        (m.user?.username || '').toLowerCase() === currentUsername.toLowerCase() ||
-        (m.user?.email || '').toLowerCase().startsWith(currentUsername.toLowerCase())
-      );
-
-      if (!me) {
-        list.innerHTML = '<div class="empty-list">ClickUp에서 일치하는 계정을 찾지 못했습니다.<br>(' + currentUsername + ')</div>';
-        btn.classList.remove('active');
-        btn.disabled = false;
-        return;
-      }
-
-      const userId = me.user.id;
+      // 토큰에서 유저 ID 추출 (pk_{userId}_{...})
+      const userId = CLICKUP_TOKEN.split('_')[1];
       cuKeyword = '';
       cuPage = 0;
       cuHasMore = true;
