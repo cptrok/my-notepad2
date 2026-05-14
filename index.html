@@ -735,7 +735,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v4</h1>
+      <h1>📝 록근_v5</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1067,14 +1067,23 @@
     document.getElementById('user-name').textContent = displayName;
   }
 
-  function openSettings() {
-    document.getElementById('settings-id').value = userProfile.username || currentUsername;
-    document.getElementById('settings-display-name').value = userProfile.display_name || '';
+  async function openSettings() {
+    document.getElementById('settings-id').value = currentUsername;
+    document.getElementById('settings-display-name').value = '';
     document.getElementById('settings-new-password').value = '';
-    document.getElementById('settings-clickup-token').value = userProfile.clickup_token || '';
+    document.getElementById('settings-clickup-token').value = '';
     document.getElementById('settings-current-password').value = '';
-    document.getElementById('settings-message').textContent = '';
+    setSettingsMsg('불러오는 중...', '');
     document.getElementById('settings-overlay').classList.add('show');
+
+    const { data, error } = await sb.rpc('get_user_profile', { p_username: currentUsername });
+    if (!error && data?.length) {
+      userProfile = data[0];
+      document.getElementById('settings-id').value = userProfile.username || currentUsername;
+      document.getElementById('settings-display-name').value = userProfile.display_name || '';
+      document.getElementById('settings-clickup-token').value = userProfile.clickup_token || '';
+    }
+    setSettingsMsg('', '');
   }
 
   function closeSettings() {
