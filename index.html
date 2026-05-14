@@ -978,7 +978,7 @@
         cuFiltered = cuFiltered.concat(matched);
         if (tasks.length < 100) cuHasMore = false;
         cuPage++;
-        if (cuFiltered.length > prevCount) break; // 새 결과가 생기면 즉시 표시
+        if (cuFiltered.length - prevCount >= 10) break; // 10개 이상 모이면 표시
       }
       allTasks = cuFiltered;
       renderTaskPage();
