@@ -845,7 +845,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v37</h1>
+      <h1>📝 록근_v38</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1530,7 +1530,7 @@
   function initQuill() {
     // 이미지 클릭 시 새 탭으로 열기
     const editorEl = document.querySelector('#quill-editor');
-    editorEl.addEventListener('click', e => {
+    editorEl.addEventListener('dblclick', e => {
       if (e.target.tagName === 'IMG') {
         window.open(e.target.src, '_blank');
       }
