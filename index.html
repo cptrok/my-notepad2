@@ -861,7 +861,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v33</h1>
+      <h1>📝 록근_v34</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1906,6 +1906,13 @@
     if (!str) return '';
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
+
+  // 탭/앱이 다시 활성화될 때 메모 목록 새로고침
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && currentUsername) {
+      loadNotes();
+    }
+  });
 
   init();
 </script>
