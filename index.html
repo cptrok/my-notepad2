@@ -677,35 +677,40 @@
     }
     #img-dl-btn:hover { background: rgba(0,0,0,0.9); }
 
-    #img-resize-toolbar {
+    #img-resize-overlay {
       position: fixed;
       display: none;
-      align-items: center;
-      gap: 4px;
-      padding: 5px 7px;
-      background: rgba(30,41,59,0.9);
-      border-radius: 8px;
-      z-index: 9998;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      border: 2px solid var(--primary);
+      pointer-events: none;
+      z-index: 9997;
+      box-sizing: border-box;
     }
-    #img-resize-toolbar span {
+    #img-resize-handle {
+      position: absolute;
+      right: -7px;
+      bottom: -7px;
+      width: 14px;
+      height: 14px;
+      background: var(--primary);
+      border: 2px solid white;
+      border-radius: 3px;
+      cursor: se-resize;
+      pointer-events: auto;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+    #img-resize-label {
+      position: absolute;
+      bottom: -24px;
+      left: 0;
       font-size: 11px;
-      color: rgba(255,255,255,0.5);
-      margin-right: 2px;
-    }
-    #img-resize-toolbar button {
-      padding: 3px 9px;
-      color: white;
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.25);
+      color: var(--primary);
+      background: white;
+      padding: 1px 6px;
       border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-      font-family: inherit;
-      transition: background 0.15s;
+      border: 1px solid #c7d2fe;
+      pointer-events: none;
+      white-space: nowrap;
     }
-    #img-resize-toolbar button:hover { background: rgba(255,255,255,0.2); }
-    #img-resize-toolbar button.active { background: var(--primary); border-color: var(--primary); }
     #quill-wrapper {
       flex: 1;
       display: flex;
@@ -856,7 +861,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v30</h1>
+      <h1>📝 록근_v31</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1635,58 +1640,74 @@
   }
 
   function initImageResize() {
-    const toolbar = document.createElement('div');
-    toolbar.id = 'img-resize-toolbar';
-    toolbar.innerHTML = `
-      <span>크기</span>
-      <button data-size="25">소</button>
-      <button data-size="50">중</button>
-      <button data-size="75">대</button>
-      <button data-size="100">원본</button>
-    `;
-    document.body.appendChild(toolbar);
+    // 오버레이 생성
+    const overlay = document.createElement('div');
+    overlay.id = 'img-resize-overlay';
+    const handle = document.createElement('div');
+    handle.id = 'img-resize-handle';
+    const label = document.createElement('div');
+    label.id = 'img-resize-label';
+    overlay.appendChild(handle);
+    overlay.appendChild(label);
+    document.body.appendChild(overlay);
 
     let selectedImg = null;
+    let isResizing = false;
+    let startX, startW;
 
-    const updateActiveBtn = () => {
+    const positionOverlay = () => {
       if (!selectedImg) return;
-      const editorW = document.querySelector('.ql-editor').offsetWidth - 40;
-      const curW = selectedImg.offsetWidth;
-      toolbar.querySelectorAll('button').forEach(btn => {
-        const target = Math.round(editorW * Number(btn.dataset.size) / 100);
-        btn.classList.toggle('active', Math.abs(curW - target) < 5);
-      });
+      const rect = selectedImg.getBoundingClientRect();
+      overlay.style.left = rect.left + 'px';
+      overlay.style.top = rect.top + 'px';
+      overlay.style.width = rect.width + 'px';
+      overlay.style.height = rect.height + 'px';
+      label.textContent = Math.round(rect.width) + ' × ' + Math.round(rect.height) + 'px';
     };
 
-    toolbar.querySelectorAll('button').forEach(btn => {
-      btn.addEventListener('click', e => {
-        e.stopPropagation();
-        if (!selectedImg) return;
-        const editorW = document.querySelector('.ql-editor').offsetWidth - 40;
-        const w = Math.round(editorW * Number(btn.dataset.size) / 100);
-        selectedImg.style.width = w + 'px';
-        selectedImg.style.height = 'auto';
-        updateActiveBtn();
-      });
-    });
+    const selectImg = (img) => {
+      selectedImg = img;
+      overlay.style.display = 'block';
+      positionOverlay();
+    };
 
+    const deselect = () => {
+      selectedImg = null;
+      overlay.style.display = 'none';
+    };
+
+    // 이미지 클릭 시 선택
     document.querySelector('#quill-editor').addEventListener('click', e => {
-      if (e.target.tagName === 'IMG') {
-        selectedImg = e.target;
-        const rect = e.target.getBoundingClientRect();
-        toolbar.style.display = 'flex';
-        toolbar.style.top = (rect.bottom + 6) + 'px';
-        toolbar.style.left = rect.left + 'px';
-        updateActiveBtn();
-        e.stopPropagation();
-      }
+      if (e.target.tagName === 'IMG') { selectImg(e.target); e.stopPropagation(); }
     });
 
+    // 외부 클릭 시 해제
     document.addEventListener('click', e => {
-      if (!e.target.closest('#img-resize-toolbar') && e.target.tagName !== 'IMG') {
-        toolbar.style.display = 'none';
-        selectedImg = null;
-      }
+      if (!overlay.contains(e.target) && e.target.tagName !== 'IMG') deselect();
+    });
+
+    // 드래그 리사이즈
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      isResizing = true;
+      startX = e.clientX;
+      startW = selectedImg.offsetWidth;
+    });
+
+    document.addEventListener('mousemove', e => {
+      if (!isResizing || !selectedImg) return;
+      const newW = Math.max(40, startW + (e.clientX - startX));
+      selectedImg.style.width = newW + 'px';
+      selectedImg.style.height = 'auto';
+      positionOverlay();
+    });
+
+    document.addEventListener('mouseup', () => { isResizing = false; });
+
+    // 스크롤 시 오버레이 위치 업데이트
+    document.querySelector('.ql-container')?.addEventListener('scroll', () => {
+      if (selectedImg) positionOverlay();
     });
   }
 
