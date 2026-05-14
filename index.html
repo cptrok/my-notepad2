@@ -861,7 +861,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v31</h1>
+      <h1>📝 록근_v32</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1676,8 +1676,11 @@
       overlay.style.display = 'none';
     };
 
-    // 이미지 클릭 시 선택
+    // 이미지 클릭/탭 시 선택
     document.querySelector('#quill-editor').addEventListener('click', e => {
+      if (e.target.tagName === 'IMG') { selectImg(e.target); e.stopPropagation(); }
+    });
+    document.querySelector('#quill-editor').addEventListener('touchend', e => {
       if (e.target.tagName === 'IMG') { selectImg(e.target); e.stopPropagation(); }
     });
 
@@ -1686,24 +1689,38 @@
       if (!overlay.contains(e.target) && e.target.tagName !== 'IMG') deselect();
     });
 
-    // 드래그 리사이즈
-    handle.addEventListener('mousedown', e => {
-      e.preventDefault();
-      e.stopPropagation();
+    // 드래그 리사이즈 (마우스 + 터치 공통)
+    const startResize = (clientX) => {
       isResizing = true;
-      startX = e.clientX;
+      startX = clientX;
       startW = selectedImg.offsetWidth;
-    });
-
-    document.addEventListener('mousemove', e => {
+    };
+    const doResize = (clientX) => {
       if (!isResizing || !selectedImg) return;
-      const newW = Math.max(40, startW + (e.clientX - startX));
+      const newW = Math.max(40, startW + (clientX - startX));
       selectedImg.style.width = newW + 'px';
       selectedImg.style.height = 'auto';
       positionOverlay();
-    });
+    };
+    const stopResize = () => { isResizing = false; };
 
-    document.addEventListener('mouseup', () => { isResizing = false; });
+    // 마우스
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault(); e.stopPropagation();
+      startResize(e.clientX);
+    });
+    document.addEventListener('mousemove', e => doResize(e.clientX));
+    document.addEventListener('mouseup', stopResize);
+
+    // 터치
+    handle.addEventListener('touchstart', e => {
+      e.preventDefault(); e.stopPropagation();
+      startResize(e.touches[0].clientX);
+    }, { passive: false });
+    document.addEventListener('touchmove', e => {
+      if (isResizing) { e.preventDefault(); doResize(e.touches[0].clientX); }
+    }, { passive: false });
+    document.addEventListener('touchend', stopResize);
 
     // 스크롤 시 오버레이 위치 업데이트
     document.querySelector('.ql-container')?.addEventListener('scroll', () => {
