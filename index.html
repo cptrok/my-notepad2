@@ -453,6 +453,26 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    .task-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px 0 4px;
+    }
+    .page-btn {
+      padding: 4px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .page-btn:hover:not(:disabled) { background: var(--primary-light); border-color: var(--primary); }
+    .page-btn:disabled { opacity: 0.35; cursor: default; }
+    .page-info { font-size: 12px; color: var(--text-muted); }
+
     .sidebar-footer { padding: 11px 14px; border-top: 1px solid var(--border); }
 
     .user-info { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -759,6 +779,12 @@
   let currentTab = 'notes';
   let allTasks = [];
   let currentTaskId = null;
+  let cuPage = 0;        // ClickUp API 페이지
+  let cuHasMore = true;  // ClickUp에 더 있는지
+  let cuKeyword = '';    // 현재 검색어
+  let cuFiltered = [];   // 필터된 전체 태스크
+  let uiPage = 0;        // 화면 페이지 (20개 단위)
+  const UI_PAGE_SIZE = 20;
 
   // ===== INIT =====
   function init() {
@@ -923,27 +949,81 @@
 
   async function fetchTasksByKeyword(q) {
     if (!q.trim()) return;
+    cuKeyword = q.trim().toLowerCase();
+    cuPage = 0;
+    cuHasMore = true;
+    cuFiltered = [];
+    uiPage = 0;
+    await loadCuUntilEnough();
+  }
+
+  async function loadCuUntilEnough() {
     document.getElementById('tasks-list').innerHTML = '<div class="loading-wrap"><div class="spinner"></div>검색 중...</div>';
     try {
-      let page = 0;
-      let fetched = [];
-      while (true) {
+      while (cuFiltered.length < (uiPage + 1) * UI_PAGE_SIZE && cuHasMore) {
         const res = await fetch(
-          'https://api.clickup.com/api/v2/team/25540965/task?space_ids[]=' + CLICKUP_SPACE_ID + '&subtasks=true&include_closed=true&page=' + page,
+          'https://api.clickup.com/api/v2/team/25540965/task?space_ids[]=' + CLICKUP_SPACE_ID + '&subtasks=true&include_closed=true&page=' + cuPage,
           { headers: { 'Authorization': CLICKUP_TOKEN } }
         );
         const json = await res.json();
         const tasks = json.tasks || [];
-        fetched = fetched.concat(tasks);
-        if (tasks.length < 100) break;
-        page++;
+        const matched = tasks.filter(t => t.name && t.name.toLowerCase().includes(cuKeyword));
+        cuFiltered = cuFiltered.concat(matched);
+        if (tasks.length < 100) cuHasMore = false;
+        cuPage++;
       }
-      const keyword = q.trim().toLowerCase();
-      allTasks = fetched.filter(t => t.name && t.name.toLowerCase().includes(keyword));
-      renderTasks(allTasks);
+      allTasks = cuFiltered;
+      renderTaskPage();
     } catch (e) {
       document.getElementById('tasks-list').innerHTML = '<div class="empty-list">불러오기 실패<br>' + e.message + '</div>';
     }
+  }
+
+  function renderTaskPage() {
+    const list = document.getElementById('tasks-list');
+    const start = uiPage * UI_PAGE_SIZE;
+    const pageTasks = cuFiltered.slice(start, start + UI_PAGE_SIZE);
+
+    if (!cuFiltered.length) {
+      list.innerHTML = '<div class="empty-list">태스크가 없습니다.</div>';
+      return;
+    }
+
+    const hasPrev = uiPage > 0;
+    const hasNext = cuFiltered.length > (uiPage + 1) * UI_PAGE_SIZE || cuHasMore;
+
+    list.innerHTML = pageTasks.map(t => {
+      const statusColor = t.status?.color || '#87909e';
+      const statusName = t.status?.status || '';
+      const assignees = t.assignees?.map(a => a.username).join(', ') || '';
+      const due = t.due_date ? new Date(Number(t.due_date)).toLocaleDateString('ko-KR', {month:'2-digit',day:'2-digit'}) : '';
+      return `
+        <div class="task-item ${t.id === currentTaskId ? 'active' : ''}" onclick="openTask('${t.id}')">
+          <div class="task-item-title">${esc(t.name)}</div>
+          <div class="task-item-meta">
+            <span class="task-status" style="background:${statusColor}">${esc(statusName)}</span>
+            ${assignees ? `<span class="task-assignee">👤 ${esc(assignees)}</span>` : ''}
+            ${due ? `<span class="task-due">📅 ${due}</span>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('') + `
+      <div class="task-pagination">
+        <button class="page-btn" onclick="prevTaskPage()" ${hasPrev ? '' : 'disabled'}>이전</button>
+        <span class="page-info">${uiPage + 1}페이지</span>
+        <button class="page-btn" onclick="nextTaskPage()" ${hasNext ? '' : 'disabled'}>다음</button>
+      </div>
+    `;
+  }
+
+  async function nextTaskPage() {
+    uiPage++;
+    await loadCuUntilEnough();
+  }
+
+  function prevTaskPage() {
+    uiPage--;
+    renderTaskPage();
   }
 
   function renderTasks(tasks) {
@@ -974,7 +1054,7 @@
     const task = allTasks.find(t => t.id === id);
     if (!task) return;
     currentTaskId = id;
-    renderTasks(allTasks);
+    renderTaskPage();
 
     const statusColor = task.status?.color || '#87909e';
     const statusName = task.status?.status || '';
