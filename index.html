@@ -735,7 +735,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v8</h1>
+      <h1>📝 록근_v9</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1206,11 +1206,8 @@
   }
 
   async function fetchMyTasks() {
-    const btn = document.getElementById('btn-my-tasks');
     const list = document.getElementById('tasks-list');
-    btn.classList.add('active');
-    btn.disabled = true;
-    list.innerHTML = '<div class="loading-wrap"><div class="spinner"></div>내 일감 불러오는 중...</div>';
+    list.innerHTML = '<div class="loading-wrap"><div class="spinner"></div>내 태스크 불러오는 중...</div>';
 
     try {
       // 토큰에서 유저 ID 추출 (pk_{userId}_{...})
@@ -1241,9 +1238,6 @@
     } catch (e) {
       list.innerHTML = '<div class="empty-list">불러오기 실패<br>' + e.message + '</div>';
     }
-
-    btn.classList.remove('active');
-    btn.disabled = false;
   }
 
   async function fetchTasksByKeyword(q) {
