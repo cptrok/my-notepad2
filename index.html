@@ -826,7 +826,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v27</h1>
+      <h1>📝 록근_v28</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1598,6 +1598,13 @@
   }
 
   async function downloadImage(url) {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      // 모바일: 새 탭으로 열기 → 길게 눌러서 저장
+      window.open(url, '_blank');
+      showToast('이미지를 길게 눌러 저장하세요');
+      return;
+    }
     try {
       const res = await fetch(url);
       const blob = await res.blob();
