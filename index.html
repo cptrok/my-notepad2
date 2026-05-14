@@ -963,19 +963,23 @@
       if (btn) { btn.disabled = true; btn.textContent = '불러오는 중...'; }
     }
     try {
-      const res = await fetch(
-        'https://api.clickup.com/api/v2/team/25540965/task?space_ids[]=' + CLICKUP_SPACE_ID + '&subtasks=true&include_closed=true&page=' + cuPage,
-        { headers: { 'Authorization': CLICKUP_TOKEN } }
-      );
-      const json = await res.json();
-      const tasks = json.tasks || [];
-      const matched = tasks.filter(t =>
-        (t.name && t.name.toLowerCase().includes(cuKeyword)) ||
-        (t.description && t.description.toLowerCase().includes(cuKeyword))
-      );
-      cuFiltered = cuFiltered.concat(matched);
-      if (tasks.length < 100) cuHasMore = false;
-      cuPage++;
+      const prevCount = cuFiltered.length;
+      while (cuHasMore) {
+        const res = await fetch(
+          'https://api.clickup.com/api/v2/team/25540965/task?space_ids[]=' + CLICKUP_SPACE_ID + '&subtasks=true&include_closed=true&page=' + cuPage,
+          { headers: { 'Authorization': CLICKUP_TOKEN } }
+        );
+        const json = await res.json();
+        const tasks = json.tasks || [];
+        const matched = tasks.filter(t =>
+          (t.name && t.name.toLowerCase().includes(cuKeyword)) ||
+          (t.description && t.description.toLowerCase().includes(cuKeyword))
+        );
+        cuFiltered = cuFiltered.concat(matched);
+        if (tasks.length < 100) cuHasMore = false;
+        cuPage++;
+        if (cuFiltered.length > prevCount) break; // 새 결과가 생기면 즉시 표시
+      }
       allTasks = cuFiltered;
       renderTaskPage();
     } catch (e) {
