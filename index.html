@@ -810,7 +810,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v23</h1>
+      <h1>📝 록근_v24</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1494,45 +1494,55 @@
   let quill = null;
 
   function initQuill() {
-    Quill.register('modules/imageResize', ImageResize);
-    quill = new Quill('#quill-editor', {
-      theme: 'snow',
-      placeholder: '메모를 입력하세요...',
-      modules: {
-        imageResize: { displaySize: true },
-        toolbar: {
-          container: [
-            ['bold', 'italic', 'underline', 'strike'],
-            [{ header: [1, 2, 3, false] }],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            ['link', 'image'],
-            ['clean']
-          ],
-          handlers: {
-            image: function() {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = 'image/*';
-              input.click();
-              input.onchange = async () => {
-                const file = input.files[0];
-                if (!file) return;
-                showToast('이미지 처리 중...');
-                const resized = await resizeImage(file, 1200, 1200, 0.85);
-                showToast('이미지 업로드 중...');
-                const fileName = `${currentUsername}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
-                const { error } = await sb.storage.from('memo-images').upload(fileName, resized, { contentType: 'image/jpeg' });
-                if (error) { showToast('업로드 실패: ' + error.message); return; }
-                const { data } = sb.storage.from('memo-images').getPublicUrl(fileName);
-                const range = quill.getSelection(true);
-                quill.insertEmbed(range.index, 'image', data.publicUrl);
-                quill.setSelection(range.index + 1);
-                showToast('이미지 삽입 완료!');
-              };
-            }
+    try {
+      if (typeof ImageResize !== 'undefined') {
+        Quill.register('modules/imageResize', ImageResize);
+      }
+    } catch(e) {}
+
+    const modules = {
+      toolbar: {
+        container: [
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ header: [1, 2, 3, false] }],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['link', 'image'],
+          ['clean']
+        ],
+        handlers: {
+          image: function() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.click();
+            input.onchange = async () => {
+              const file = input.files[0];
+              if (!file) return;
+              showToast('이미지 처리 중...');
+              const resized = await resizeImage(file, 1200, 1200, 0.85);
+              showToast('이미지 업로드 중...');
+              const fileName = `${currentUsername}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+              const { error } = await sb.storage.from('memo-images').upload(fileName, resized, { contentType: 'image/jpeg' });
+              if (error) { showToast('업로드 실패: ' + error.message); return; }
+              const { data } = sb.storage.from('memo-images').getPublicUrl(fileName);
+              const range = quill.getSelection(true);
+              quill.insertEmbed(range.index, 'image', data.publicUrl);
+              quill.setSelection(range.index + 1);
+              showToast('이미지 삽입 완료!');
+            };
           }
         }
       }
+    };
+
+    if (typeof ImageResize !== 'undefined') {
+      modules.imageResize = { displaySize: true };
+    }
+
+    quill = new Quill('#quill-editor', {
+      theme: 'snow',
+      placeholder: '메모를 입력하세요...',
+      modules
     });
   }
 
