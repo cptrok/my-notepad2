@@ -254,6 +254,19 @@
 
     .search-box:focus { border-color: var(--primary); }
 
+    .btn-search-clickup {
+      width: 36px;
+      height: 36px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      font-size: 15px;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .btn-search-clickup:hover { background: var(--primary-light); border-color: var(--primary); }
+
     .sidebar-tabs {
       display: flex;
       gap: 4px;
@@ -661,8 +674,12 @@
         </div>
         <input class="search-box" id="search-box-notes" type="text" placeholder="메모 검색..."
           oninput="searchNotes(this.value)" />
-        <input class="search-box" id="search-box-clickup" type="text" placeholder="검색어 입력 후 Enter"
-          onkeydown="if(event.key==='Enter') fetchTasksByKeyword(this.value)" style="display:none" />
+        <div id="clickup-search-wrap" style="display:none; flex-direction:row; gap:6px; align-items:center;">
+          <input class="search-box" id="search-box-clickup" type="text" placeholder="검색어 입력"
+            onkeydown="if(event.key==='Enter') fetchTasksByKeyword(this.value)"
+            style="margin:0; flex:1; width:0;" />
+          <button class="btn-search-clickup" onclick="fetchTasksByKeyword(document.getElementById('search-box-clickup').value)">🔍</button>
+        </div>
       </div>
       <div class="notes-list" id="notes-list">
         <div class="empty-list">불러오는 중...</div>
@@ -869,7 +886,7 @@
     document.getElementById('notes-list').style.display = tab === 'notes' ? 'block' : 'none';
     document.getElementById('tasks-list').style.display = tab === 'clickup' ? 'block' : 'none';
     document.getElementById('search-box-notes').style.display = tab === 'notes' ? 'block' : 'none';
-    document.getElementById('search-box-clickup').style.display = tab === 'clickup' ? 'block' : 'none';
+    document.getElementById('clickup-search-wrap').style.display = tab === 'clickup' ? 'flex' : 'none';
     document.getElementById('btn-new-note').style.display = tab === 'notes' ? 'flex' : 'none';
 
     if (tab === 'clickup') {
