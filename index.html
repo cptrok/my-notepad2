@@ -631,6 +631,34 @@
 
     .input-hint { font-size: 11px; color: #94a3b8; margin-top: 3px; }
 
+    .btn-ocr {
+      padding: 7px 10px;
+      background: white;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-ocr:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+    .btn-ocr:disabled { opacity: 0.5; cursor: default; }
+
+    .ocr-progress {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--primary-light);
+      border-bottom: 1px solid #c7d2fe;
+      font-size: 13px;
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+    .ocr-progress.show { display: flex; }
+
     .editor { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: white; }
 
     .editor-empty {
@@ -774,7 +802,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v17</h1>
+      <h1>📝 록근_v18</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -921,9 +949,15 @@
           <input class="title-input" type="text" id="note-title" placeholder="제목 (선택사항)" />
           <div class="editor-actions">
             <span class="save-indicator" id="save-indicator">저장됨 ✓</span>
+            <button class="btn-ocr" id="btn-ocr" onclick="document.getElementById('ocr-file-input').click()" title="이미지에서 텍스트 추출">🖼️ 텍스트 추출</button>
+            <input type="file" id="ocr-file-input" accept="image/*" style="display:none" onchange="runOCR(this)" />
             <button class="btn-save" onclick="saveNote()">저장</button>
             <button class="btn-delete" id="btn-delete" onclick="deleteNote()" style="display:none">삭제</button>
           </div>
+        </div>
+        <div class="ocr-progress" id="ocr-progress">
+          <div class="spinner"></div>
+          <span id="ocr-progress-text">이미지 분석 중...</span>
         </div>
         <div class="content-area">
           <textarea class="content-input" id="note-content" placeholder="메모를 입력하세요..."></textarea>
@@ -937,6 +971,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
   const SUPABASE_URL = 'https://lmtdmubkmmuchomkbvwy.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtdGRtdWJrbW11Y2hvbWtidnd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNjI0NzUsImV4cCI6MjA5MzczODQ3NX0.4FZ9t356ZaWI52E0Mofruool2OUrTNp6kmgAOi6tkhA';
@@ -1450,6 +1485,47 @@
     document.getElementById('editor').classList.add('open');
   }
 
+
+  // ===== OCR =====
+  async function runOCR(input) {
+    const file = input.files[0];
+    if (!file) return;
+    input.value = '';
+
+    const btn = document.getElementById('btn-ocr');
+    const progress = document.getElementById('ocr-progress');
+    const progressText = document.getElementById('ocr-progress-text');
+    btn.disabled = true;
+    progress.classList.add('show');
+    progressText.textContent = '이미지 불러오는 중...';
+
+    try {
+      const result = await Tesseract.recognize(file, 'kor+eng', {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            progressText.textContent = `텍스트 인식 중... ${Math.round(m.progress * 100)}%`;
+          }
+        }
+      });
+
+      const extracted = result.data.text.trim();
+      if (!extracted) { showToast('텍스트를 인식하지 못했습니다.'); return; }
+
+      const textarea = document.getElementById('note-content');
+      const pos = textarea.selectionStart;
+      const before = textarea.value.slice(0, pos);
+      const after = textarea.value.slice(pos);
+      textarea.value = before + (before && !before.endsWith('\n') ? '\n' : '') + extracted + (after ? '\n' : '') + after;
+      textarea.selectionStart = textarea.selectionEnd = pos + extracted.length;
+      textarea.focus();
+      showToast('텍스트 추출 완료!');
+    } catch (e) {
+      showToast('오류: ' + e.message);
+    } finally {
+      btn.disabled = false;
+      progress.classList.remove('show');
+    }
+  }
 
   // ===== NOTES =====
   async function loadNotes() {
