@@ -466,18 +466,6 @@
       gap: 8px;
     }
 
-    .attachment-img {
-      width: 120px;
-      height: 90px;
-      object-fit: cover;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-
-    .attachment-img:hover { opacity: 0.8; }
-
     .attachment-file {
       display: flex;
       align-items: center;
@@ -786,7 +774,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v13</h1>
+      <h1>📝 록근_v14</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1409,9 +1397,6 @@
       : '-';
     const desc = task.description || '설명 없음';
     const attachments = task.attachments || [];
-    const imageTypes = ['image/png','image/jpeg','image/gif','image/webp','image/jpg'];
-    const imgAttachments = attachments.filter(a => imageTypes.includes(a.mimetype) || /\.(png|jpe?g|gif|webp)$/i.test(a.title || ''));
-    const fileAttachments = attachments.filter(a => !imgAttachments.includes(a));
 
     document.getElementById('editor-empty').style.display = 'none';
     document.getElementById('editor-main').style.display = 'none';
@@ -1424,12 +1409,7 @@
       <div class="task-attachments">
         <div class="task-attachments-title">첨부파일 (${attachments.length})</div>
         <div class="task-attachments-grid">
-          ${imgAttachments.map(a => `
-            <img class="attachment-img" src="${a.url}" alt="${esc(a.title)}"
-              onclick="window.open('${a.url}','_blank')"
-              onerror="this.parentElement.style.display='none'" />
-          `).join('')}
-          ${fileAttachments.map(a => `
+          ${attachments.map(a => `
             <a class="attachment-file" href="${a.url}" target="_blank" rel="noopener">
               📎 ${esc(a.title || '파일')}
             </a>
