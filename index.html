@@ -879,7 +879,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v41</h1>
+      <h1>📝 록근_v42</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1836,7 +1836,7 @@
     const descHtml = desc ? `
       <div class="task-attachments">
         <div class="task-attachments-title">설명</div>
-        <div class="task-detail-desc" style="white-space:pre-wrap;">${esc(desc)}</div>
+        <div class="task-detail-desc">${esc(desc).replace(/\n+/g, ' ')}</div>
       </div>
     ` : '';
 
