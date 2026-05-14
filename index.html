@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>메모장</title>
+  <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
   <style>
     :root {
       --primary: #4f46e5;
@@ -631,79 +632,39 @@
 
     .input-hint { font-size: 11px; color: #94a3b8; margin-top: 3px; }
 
-    .btn-img-add {
-      padding: 7px 10px;
-      background: white;
-      color: var(--text-muted);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 14px;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-    .btn-img-add:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
-    .btn-img-add:disabled { opacity: 0.5; cursor: default; }
-
-    .image-gallery {
-      display: none;
-      gap: 8px;
-      padding: 10px 18px;
-      border-bottom: 1px solid var(--border);
-      overflow-x: auto;
-      flex-shrink: 0;
-      background: var(--bg);
-    }
-    .image-gallery.show { display: flex; }
-    .image-gallery::-webkit-scrollbar { height: 4px; }
-    .image-gallery::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-
-    .gallery-item {
-      position: relative;
+    /* Quill 에디터 */
+    .ql-toolbar.ql-snow {
+      border: none !important;
+      border-bottom: 1px solid var(--border) !important;
+      padding: 8px 14px !important;
       flex-shrink: 0;
     }
-
-    .gallery-img {
-      width: 100px;
-      height: 80px;
-      object-fit: cover;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      cursor: pointer;
-      display: block;
-      transition: opacity 0.2s;
+    .ql-container.ql-snow {
+      border: none !important;
+      flex: 1;
+      overflow-y: auto;
+      font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans KR', 'Segoe UI', sans-serif;
+      font-size: 15px;
     }
-    .gallery-img:hover { opacity: 0.85; }
-
-    .btn-img-delete {
-      position: absolute;
-      top: -6px;
-      right: -6px;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: var(--danger);
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-size: 10px;
+    .ql-editor {
+      padding: 18px 20px !important;
+      line-height: 1.8 !important;
+      min-height: 100%;
+    }
+    .ql-editor.ql-blank::before {
+      color: #cbd5e1 !important;
+      font-style: normal !important;
+    }
+    .ql-editor img {
+      max-width: 100%;
+      border-radius: 6px;
+      margin: 4px 0;
+    }
+    #quill-wrapper {
+      flex: 1;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
-    }
-
-    .img-uploading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100px;
-      height: 80px;
-      border-radius: 6px;
-      border: 1.5px dashed #c7d2fe;
-      background: var(--primary-light);
-      flex-shrink: 0;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     .editor { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: white; }
@@ -849,7 +810,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v20</h1>
+      <h1>📝 록근_v21</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -996,15 +957,12 @@
           <input class="title-input" type="text" id="note-title" placeholder="제목 (선택사항)" />
           <div class="editor-actions">
             <span class="save-indicator" id="save-indicator">저장됨 ✓</span>
-            <button class="btn-img-add" id="btn-img-add" onclick="document.getElementById('img-file-input').click()" title="이미지 추가">🖼️ 이미지</button>
-            <input type="file" id="img-file-input" accept="image/*" multiple style="display:none" onchange="uploadImages(this)" />
             <button class="btn-save" onclick="saveNote()">저장</button>
             <button class="btn-delete" id="btn-delete" onclick="deleteNote()" style="display:none">삭제</button>
           </div>
         </div>
-        <div class="image-gallery" id="image-gallery"></div>
-        <div class="content-area">
-          <textarea class="content-input" id="note-content" placeholder="메모를 입력하세요..."></textarea>
+        <div id="quill-wrapper">
+          <div id="quill-editor"></div>
         </div>
       </div>
     </div>
@@ -1015,6 +973,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
 <script>
   const SUPABASE_URL = 'https://lmtdmubkmmuchomkbvwy.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtdGRtdWJrbW11Y2hvbWtidnd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNjI0NzUsImV4cCI6MjA5MzczODQ3NX0.4FZ9t356ZaWI52E0Mofruool2OUrTNp6kmgAOi6tkhA';
@@ -1042,6 +1001,7 @@
 
   // ===== INIT =====
   function init() {
+    initQuill();
     const saved = localStorage.getItem('memo_user');
     if (saved) {
       currentUsername = saved;
@@ -1529,71 +1489,53 @@
   }
 
 
-  // ===== IMAGE =====
-  let noteImages = [];
+  // ===== QUILL =====
+  let quill = null;
 
-  async function uploadImages(input) {
-    const files = Array.from(input.files);
-    if (!files.length) return;
-    input.value = '';
-
-    const btn = document.getElementById('btn-img-add');
-    btn.disabled = true;
-
-    for (const file of files) {
-      const tempId = 'uploading_' + Date.now();
-      addUploadingPlaceholder(tempId);
-
-      const ext = file.name.split('.').pop();
-      const fileName = `${currentUsername}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await sb.storage.from('memo-images').upload(fileName, file);
-      if (error) { removeGalleryItem(tempId); showToast('업로드 실패: ' + error.message); continue; }
-
-      const { data } = sb.storage.from('memo-images').getPublicUrl(fileName);
-      noteImages.push({ url: data.publicUrl, path: fileName });
-      removeGalleryItem(tempId);
-      renderGallery();
-    }
-
-    btn.disabled = false;
-  }
-
-  function addUploadingPlaceholder(id) {
-    const gallery = document.getElementById('image-gallery');
-    gallery.classList.add('show');
-    const div = document.createElement('div');
-    div.className = 'img-uploading';
-    div.id = id;
-    div.innerHTML = '<div class="spinner"></div>';
-    gallery.appendChild(div);
-  }
-
-  function removeGalleryItem(id) {
-    const el = document.getElementById(id);
-    if (el) el.remove();
-  }
-
-  function renderGallery() {
-    const gallery = document.getElementById('image-gallery');
-    gallery.innerHTML = '';
-    if (!noteImages.length) { gallery.classList.remove('show'); return; }
-    gallery.classList.add('show');
-    noteImages.forEach((img, i) => {
-      const item = document.createElement('div');
-      item.className = 'gallery-item';
-      item.innerHTML = `
-        <img class="gallery-img" src="${img.url}" onclick="window.open('${img.url}','_blank')" />
-        <button class="btn-img-delete" onclick="removeImage(${i})">✕</button>
-      `;
-      gallery.appendChild(item);
+  function initQuill() {
+    quill = new Quill('#quill-editor', {
+      theme: 'snow',
+      placeholder: '메모를 입력하세요...',
+      modules: {
+        toolbar: {
+          container: [
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ header: [1, 2, 3, false] }],
+            [{ list: 'ordered' }, { list: 'bullet' }],
+            ['link', 'image'],
+            ['clean']
+          ],
+          handlers: {
+            image: function() {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.click();
+              input.onchange = async () => {
+                const file = input.files[0];
+                if (!file) return;
+                showToast('이미지 업로드 중...');
+                const ext = file.name.split('.').pop();
+                const fileName = `${currentUsername}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+                const { error } = await sb.storage.from('memo-images').upload(fileName, file);
+                if (error) { showToast('업로드 실패: ' + error.message); return; }
+                const { data } = sb.storage.from('memo-images').getPublicUrl(fileName);
+                const range = quill.getSelection(true);
+                quill.insertEmbed(range.index, 'image', data.publicUrl);
+                quill.setSelection(range.index + 1);
+                showToast('이미지 삽입 완료!');
+              };
+            }
+          }
+        }
+      }
     });
   }
 
-  async function removeImage(index) {
-    const img = noteImages[index];
-    await sb.storage.from('memo-images').remove([img.path]);
-    noteImages.splice(index, 1);
-    renderGallery();
+  function stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
   }
 
   // ===== NOTES =====
@@ -1613,7 +1555,7 @@
     list.innerHTML = notes.map(n => `
       <div class="note-item ${n.id === currentNoteId ? 'active' : ''}" onclick="openNote('${n.id}')">
         <div class="note-item-title">${esc(n.title || '제목 없음')}</div>
-        <div class="note-item-preview">${esc(n.content.slice(0, 60))}</div>
+        <div class="note-item-preview">${esc(stripHtml(n.content).slice(0, 60))}</div>
         <div class="note-item-date">${timeAgo(n.updated_at)}</div>
       </div>
     `).join('');
@@ -1624,10 +1566,8 @@
     if (!note) return;
     currentNoteId = id;
     document.getElementById('note-title').value = note.title || '';
-    document.getElementById('note-content').value = note.content;
     document.getElementById('btn-delete').style.display = 'block';
-    noteImages = note.images || [];
-    renderGallery();
+    quill.clipboard.dangerouslyPasteHTML(note.content || '');
     showEditorPanel();
     renderList(allNotes);
   }
@@ -1635,13 +1575,11 @@
   function newNote() {
     currentNoteId = null;
     document.getElementById('note-title').value = '';
-    document.getElementById('note-content').value = '';
     document.getElementById('btn-delete').style.display = 'none';
-    noteImages = [];
-    renderGallery();
+    quill.setContents([]);
     showEditorPanel();
     renderList(allNotes);
-    setTimeout(() => document.getElementById('note-content').focus(), 100);
+    setTimeout(() => quill.focus(), 100);
   }
 
   function showEditorPanel() {
@@ -1656,15 +1594,14 @@
 
   async function saveNote() {
     const title = document.getElementById('note-title').value.trim();
-    const content = document.getElementById('note-content').value.trim();
-    if (!content) { showToast('내용을 입력하세요.'); return; }
+    const content = quill.root.innerHTML;
+    if (!stripHtml(content).trim()) { showToast('내용을 입력하세요.'); return; }
 
     const { data, error } = await sb.rpc('save_user_note', {
       p_username: currentUsername,
       p_id: currentNoteId || null,
       p_title: title,
       p_content: content,
-      p_images: noteImages
     });
     if (error) { showToast('저장 실패: ' + (error.message || JSON.stringify(error))); return; }
     if (!currentNoteId) {
