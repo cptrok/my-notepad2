@@ -894,7 +894,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v47</h1>
+      <h1>📝 록근_v48</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1894,9 +1894,20 @@
     document.getElementById('editor').appendChild(detail);
     if (desc) {
       const lines = desc.split('\n');
+      // 비고 또는 논리코어 헤더 위치로 컬럼 수 결정 (헤더 수 + 행번호 1)
+      const 비고Idx = lines.indexOf('비고');
+      const 논리코어Idx = lines.indexOf('논리코어');
+      let colCount;
+      if (비고Idx !== -1) {
+        colCount = 비고Idx + 2;
+      } else if (논리코어Idx !== -1) {
+        colCount = 논리코어Idx + 2;
+      } else {
+        colCount = 6;
+      }
       const rows = [];
-      for (let i = 0; i < lines.length; i += 6) {
-        rows.push(lines.slice(i, i + 6).join('\t'));
+      for (let i = 0; i < lines.length; i += colCount) {
+        rows.push(lines.slice(i, i + colCount).join('\t'));
       }
       detail.querySelector('#license-desc-body').textContent = rows.join('\n');
     }
