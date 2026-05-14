@@ -482,6 +482,40 @@
 
     .attachment-file:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
 
+    .attachment-dl-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 12px;
+      background: var(--primary-light);
+      border: 1.5px solid var(--primary);
+      border-radius: 7px;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .attachment-dl-btn:hover { background: var(--primary); color: white; }
+
+    .license-task-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .license-task-item:hover { background: var(--primary-light); }
+    .license-task-item.active { background: #e8eeff; border-left: 3px solid var(--primary); }
+    .license-task-name { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .license-task-meta { display: flex; gap: 8px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+    .license-list-badge {
+      background: #f0f0f0;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 11px;
+      color: #555;
+    }
+
     .empty-list {
       text-align: center;
       color: var(--text-muted);
@@ -845,7 +879,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v38</h1>
+      <h1>📝 록근_v39</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -943,6 +977,7 @@
         <div class="sidebar-tabs">
           <button class="tab-btn active" id="tab-notes" onclick="switchTab('notes')">메모</button>
           <button class="tab-btn" id="tab-clickup" onclick="switchTab('clickup')">ClickUp</button>
+          <button class="tab-btn" id="tab-license" onclick="switchTab('license')">라이선스</button>
         </div>
         <input class="search-box" id="search-box-notes" type="text" placeholder="메모 검색..."
           oninput="searchNotes(this.value)" />
@@ -970,6 +1005,9 @@
       </div>
       <div class="tasks-list" id="tasks-list">
         <div class="empty-list">불러오는 중...</div>
+      </div>
+      <div class="notes-list" id="license-list" style="display:none;">
+        <div class="empty-list">라이선스 탭을 클릭하면 불러옵니다.</div>
       </div>
       <div class="sidebar-footer">
         <div class="user-info">
@@ -1261,8 +1299,10 @@
     currentTab = tab;
     document.getElementById('tab-notes').classList.toggle('active', tab === 'notes');
     document.getElementById('tab-clickup').classList.toggle('active', tab === 'clickup');
+    document.getElementById('tab-license').classList.toggle('active', tab === 'license');
     document.getElementById('notes-list').style.display = tab === 'notes' ? 'block' : 'none';
     document.getElementById('tasks-list').style.display = tab === 'clickup' ? 'block' : 'none';
+    document.getElementById('license-list').style.display = tab === 'license' ? 'block' : 'none';
     document.getElementById('search-box-notes').style.display = tab === 'notes' ? 'block' : 'none';
     document.getElementById('clickup-search-wrap').style.display = tab === 'clickup' ? 'flex' : 'none';
     document.getElementById('btn-new-note').style.display = tab === 'notes' ? 'flex' : 'none';
@@ -1271,11 +1311,16 @@
       cuSubTab = 'search';
       switchCuTab('search');
     }
+    if (tab === 'license') {
+      loadLicenseTasks();
+    }
 
     // 에디터 초기화
     document.getElementById('editor-empty').style.display = 'flex';
     document.getElementById('editor-main').style.display = 'none';
     document.getElementById('editor').classList.remove('open');
+    const existing = document.getElementById('task-detail');
+    if (existing) existing.remove();
     currentNoteId = null;
     currentTaskId = null;
   }
@@ -1715,6 +1760,132 @@
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
     return tmp.textContent || tmp.innerText || '';
+  }
+
+  // ===== LICENSE =====
+  let licenseTasks = [];
+  let licenseLoaded = false;
+  let currentLicenseTaskId = null;
+  const LICENSE_SPACE_ID = '60975902';
+  const TEAM_ID = '25540965';
+
+  async function loadLicenseTasks() {
+    if (licenseLoaded) { renderLicenseList(); return; }
+    document.getElementById('license-list').innerHTML = '<div class="empty-list">불러오는 중...</div>';
+    let all = [];
+    let page = 0;
+    while (true) {
+      const url = `https://api.clickup.com/api/v2/team/${TEAM_ID}/task?space_ids[]=${LICENSE_SPACE_ID}&statuses[]=in%20progress&page=${page}&subtasks=true&include_closed=false`;
+      const res = await fetch(url, { headers: { Authorization: CLICKUP_TOKEN } });
+      const data = await res.json();
+      if (!data.tasks || data.tasks.length === 0) break;
+      all = all.concat(data.tasks);
+      if (data.tasks.length < 100) break;
+      page++;
+    }
+    licenseTasks = all.sort((a, b) => Number(b.date_created) - Number(a.date_created));
+    licenseLoaded = true;
+    renderLicenseList();
+  }
+
+  function renderLicenseList() {
+    const list = document.getElementById('license-list');
+    if (licenseTasks.length === 0) {
+      list.innerHTML = '<div class="empty-list">진행 중인 라이선스 태스크가 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = licenseTasks.map(t => {
+      const listName = t.list?.name || '';
+      const folderName = t.folder?.name || '';
+      const assignees = t.assignees?.map(a => a.username).join(', ') || '';
+      return `
+        <div class="license-task-item ${t.id === currentLicenseTaskId ? 'active' : ''}" onclick="openLicenseTask('${t.id}')">
+          <div class="license-task-name">${esc(t.name)}</div>
+          <div class="license-task-meta">
+            ${folderName ? `<span class="license-list-badge">${esc(folderName)}</span>` : ''}
+            ${listName ? `<span class="license-list-badge">${esc(listName)}</span>` : ''}
+            ${assignees ? `<span>${esc(assignees)}</span>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function openLicenseTask(id) {
+    currentLicenseTaskId = id;
+    renderLicenseList();
+
+    // 태스크 상세 및 최신 첨부파일 조회
+    const res = await fetch(`https://api.clickup.com/api/v2/task/${id}`, {
+      headers: { Authorization: CLICKUP_TOKEN }
+    });
+    const task = await res.json();
+
+    const existing = document.getElementById('task-detail');
+    if (existing) existing.remove();
+    document.getElementById('editor-empty').style.display = 'none';
+    document.getElementById('editor-main').style.display = 'none';
+
+    const attachments = task.attachments || [];
+    const assignees = task.assignees?.map(a => a.username).join(', ') || '-';
+    const due = task.due_date ? new Date(Number(task.due_date)).toLocaleDateString('ko-KR', {year:'numeric',month:'2-digit',day:'2-digit'}) : '-';
+    const listName = task.list?.name || '';
+    const folderName = task.folder?.name || '';
+
+    const attachmentsHtml = attachments.length ? `
+      <div class="task-attachments">
+        <div class="task-attachments-title">첨부파일 (${attachments.length})</div>
+        <div class="task-attachments-grid">
+          ${attachments.map(a => `
+            <button class="attachment-dl-btn" onclick="downloadAttachment('${a.url}','${esc(a.title||'file')}')">
+              ⬇ ${esc(a.title || '파일')}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    ` : '<div style="margin-top:16px;color:var(--text-muted);font-size:13px;">첨부파일이 없습니다.</div>';
+
+    const detail = document.createElement('div');
+    detail.id = 'task-detail';
+    detail.className = 'task-detail';
+    detail.innerHTML = `
+      <a class="task-detail-title" href="https://app.clickup.com/t/${task.id}" target="_blank" rel="noopener">${esc(task.name)}</a>
+      <div class="task-detail-info">
+        <div class="task-detail-row">
+          <span class="task-detail-label">분류</span>
+          <span>${esc(folderName)}${listName ? ' / ' + esc(listName) : ''}</span>
+        </div>
+        <div class="task-detail-row">
+          <span class="task-detail-label">담당자</span>
+          <span>${esc(assignees)}</span>
+        </div>
+        <div class="task-detail-row">
+          <span class="task-detail-label">마감일</span>
+          <span>${due}</span>
+        </div>
+      </div>
+      ${attachmentsHtml}
+    `;
+    document.getElementById('editor').appendChild(detail);
+    document.getElementById('editor').classList.add('open');
+  }
+
+  async function downloadAttachment(url, filename) {
+    try {
+      showToast('다운로드 중...');
+      const res = await fetch(url, { headers: { Authorization: CLICKUP_TOKEN } });
+      if (!res.ok) throw new Error('서버 오류 ' + res.status);
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      showToast('다운로드 완료!');
+    } catch(e) {
+      // CORS 등 실패 시 새 탭으로 열기
+      window.open(url, '_blank');
+      showToast('새 탭에서 파일을 저장하세요.');
+    }
   }
 
   // ===== NOTES =====
