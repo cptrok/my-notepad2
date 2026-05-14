@@ -735,7 +735,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v5</h1>
+      <h1>📝 록근_v6</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -814,11 +814,6 @@
       <label>ClickUp API 토큰</label>
       <input type="text" id="settings-clickup-token" placeholder="pk_..." />
       <div class="input-hint">개인 API 토큰을 입력하면 내 일감 기능이 활성화됩니다</div>
-    </div>
-    <div class="settings-divider">본인 확인</div>
-    <div class="form-group">
-      <label>현재 비밀번호 <span style="color:var(--danger)">*</span></label>
-      <input type="password" id="settings-current-password" placeholder="변경 사항 저장 시 필요" />
     </div>
     <button class="btn-success" onclick="saveProfile()">저장</button>
     <div class="settings-message" id="settings-message"></div>
@@ -1072,7 +1067,6 @@
     document.getElementById('settings-display-name').value = '';
     document.getElementById('settings-new-password').value = '';
     document.getElementById('settings-clickup-token').value = '';
-    document.getElementById('settings-current-password').value = '';
     setSettingsMsg('불러오는 중...', '');
     document.getElementById('settings-overlay').classList.add('show');
 
@@ -1095,16 +1089,13 @@
     const displayName = document.getElementById('settings-display-name').value.trim();
     const newPassword = document.getElementById('settings-new-password').value;
     const clickupToken = document.getElementById('settings-clickup-token').value.trim();
-    const currentPassword = document.getElementById('settings-current-password').value;
 
     if (!newId) { setSettingsMsg('아이디를 입력하세요.', 'error'); return; }
-    if (!currentPassword) { setSettingsMsg('현재 비밀번호를 입력하세요.', 'error'); return; }
 
     setSettingsMsg('저장 중...', '');
 
     const { data, error } = await sb.rpc('update_user_profile', {
       p_username: currentUsername,
-      p_current_password: currentPassword,
       p_new_id: newId,
       p_display_name: displayName,
       p_new_password: newPassword,
