@@ -826,7 +826,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v26</h1>
+      <h1>📝 록근_v27</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1522,20 +1522,40 @@
       dlBtn.style.display = 'block';
       dlBtn.style.top = (rect.top + 6) + 'px';
       dlBtn.style.left = (rect.left + 6) + 'px';
-      dlBtn.onclick = () => downloadImage(img.src);
+      dlBtn.onclick = () => { downloadImage(img.src); dlBtn.style.display = 'none'; };
     };
     const scheduleHide = () => {
       hideTimer = setTimeout(() => { dlBtn.style.display = 'none'; }, 300);
     };
 
-    document.querySelector('#quill-editor').addEventListener('mouseover', e => {
+    const editorEl = document.querySelector('#quill-editor');
+
+    // 데스크톱: 호버
+    editorEl.addEventListener('mouseover', e => {
       if (e.target.tagName === 'IMG') showBtn(e.target);
     });
-    document.querySelector('#quill-editor').addEventListener('mouseout', e => {
+    editorEl.addEventListener('mouseout', e => {
       if (e.target.tagName === 'IMG') scheduleHide();
     });
     dlBtn.addEventListener('mouseenter', () => clearTimeout(hideTimer));
     dlBtn.addEventListener('mouseleave', scheduleHide);
+
+    // 모바일: 탭
+    editorEl.addEventListener('touchend', e => {
+      if (e.target.tagName === 'IMG') {
+        e.preventDefault();
+        showBtn(e.target);
+      } else {
+        scheduleHide();
+      }
+    });
+
+    // 외부 탭 시 버튼 숨김
+    document.addEventListener('touchstart', e => {
+      if (e.target !== dlBtn && e.target.tagName !== 'IMG') {
+        dlBtn.style.display = 'none';
+      }
+    });
 
     quill = new Quill('#quill-editor', {
       theme: 'snow',
