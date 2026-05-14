@@ -918,7 +918,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v56</h1>
+      <h1>📝 록근_v57</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1010,7 +1010,7 @@
     <div class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-top">
-          <span class="sidebar-title">📝 메모장 록근_v56</span>
+          <span class="sidebar-title">📝 메모장 록근_v57</span>
           <button class="btn-new" id="btn-new-note" onclick="newNote()">+</button>
         </div>
         <div class="sidebar-tabs">
@@ -1882,7 +1882,8 @@
       console.log('[Trial] nested pages count:', nested.length, 'names:', nested.map(p => p.name));
       const pages = nested
         .filter(p => /^\d{4}\/\dQ$/.test(p.name))
-        .sort((a, b) => b.name.localeCompare(a.name));
+        .sort((a, b) => b.name.localeCompare(a.name))
+        .slice(0, 2);
       trialPagesCache[docId] = pages;
       renderTrialQuarters(pages);
     } catch(e) {
