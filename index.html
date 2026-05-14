@@ -918,7 +918,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v51</h1>
+      <h1>📝 록근_v52</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1866,16 +1866,23 @@
     }
 
     document.getElementById('license-list').innerHTML = '<div class="empty-list">불러오는 중...</div>';
-    const res = await fetch(
-      `https://api.clickup.com/api/v3/workspaces/25540965/docs/${docId}/pages`,
-      { headers: { Authorization: CLICKUP_TOKEN } }
-    );
-    const data = await res.json();
-    const pages = (data.pages || [])
-      .filter(p => /^\d{4}\/\dQ$/.test(p.name))
-      .sort((a, b) => b.name.localeCompare(a.name));
-    trialPagesCache[docId] = pages;
-    renderTrialQuarters(pages);
+    try {
+      const res = await fetch(
+        `https://api.clickup.com/api/v3/workspaces/25540965/docs/${docId}/pages`,
+        { headers: { Authorization: CLICKUP_TOKEN } }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      // 분기 페이지는 data.pages[0].pages 에 중첩되어 있음
+      const nested = data.pages?.[0]?.pages || data.pages || [];
+      const pages = nested
+        .filter(p => /^\d{4}\/\dQ$/.test(p.name))
+        .sort((a, b) => b.name.localeCompare(a.name));
+      trialPagesCache[docId] = pages;
+      renderTrialQuarters(pages);
+    } catch(e) {
+      document.getElementById('license-list').innerHTML = `<div class="empty-list">불러오기 실패: ${e.message}</div>`;
+    }
   }
 
   function renderTrialQuarters(pages) {
@@ -1908,12 +1915,21 @@
     document.getElementById('editor').appendChild(loading);
     document.getElementById('editor').classList.add('open');
 
-    const res = await fetch(
-      `https://api.clickup.com/api/v3/workspaces/25540965/docs/${docId}/pages/${pageId}?content_format=text%2Fmd`,
-      { headers: { Authorization: CLICKUP_TOKEN } }
-    );
-    const data = await res.json();
-    const sections = parseTrialMarkdown(data.content || '');
+    let sections = [];
+    try {
+      const res = await fetch(
+        `https://api.clickup.com/api/v3/workspaces/25540965/docs/${docId}/pages/${pageId}?content_format=text%2Fmd`,
+        { headers: { Authorization: CLICKUP_TOKEN } }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      // 내용은 data.content 또는 data.pages[0].content
+      const content = data.content || data.pages?.[0]?.content || '';
+      sections = parseTrialMarkdown(content);
+    } catch(e) {
+      loading.innerHTML = `<div style="color:red;padding:24px;">불러오기 실패: ${e.message}</div>`;
+      return;
+    }
 
     const panel = document.createElement('div');
     panel.id = 'trial-panel';
