@@ -849,7 +849,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v19</h1>
+      <h1>📝 록근_v20</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1666,7 +1666,7 @@
       p_content: content,
       p_images: noteImages
     });
-    if (error) { showToast('저장에 실패했습니다.'); return; }
+    if (error) { showToast('저장 실패: ' + (error.message || JSON.stringify(error))); return; }
     if (!currentNoteId) {
       currentNoteId = data;
       document.getElementById('btn-delete').style.display = 'block';
