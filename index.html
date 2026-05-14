@@ -826,7 +826,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v28</h1>
+      <h1>📝 록근_v29</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1540,22 +1540,6 @@
     dlBtn.addEventListener('mouseenter', () => clearTimeout(hideTimer));
     dlBtn.addEventListener('mouseleave', scheduleHide);
 
-    // 모바일: 탭
-    editorEl.addEventListener('touchend', e => {
-      if (e.target.tagName === 'IMG') {
-        e.preventDefault();
-        showBtn(e.target);
-      } else {
-        scheduleHide();
-      }
-    });
-
-    // 외부 탭 시 버튼 숨김
-    document.addEventListener('touchstart', e => {
-      if (e.target !== dlBtn && e.target.tagName !== 'IMG') {
-        dlBtn.style.display = 'none';
-      }
-    });
 
     quill = new Quill('#quill-editor', {
       theme: 'snow',
