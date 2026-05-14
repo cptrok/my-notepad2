@@ -967,7 +967,10 @@
         );
         const json = await res.json();
         const tasks = json.tasks || [];
-        const matched = tasks.filter(t => t.name && t.name.toLowerCase().includes(cuKeyword));
+        const matched = tasks.filter(t =>
+          (t.name && t.name.toLowerCase().includes(cuKeyword)) ||
+          (t.description && t.description.toLowerCase().includes(cuKeyword))
+        );
         cuFiltered = cuFiltered.concat(matched);
         if (tasks.length < 100) cuHasMore = false;
         cuPage++;
