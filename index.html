@@ -676,6 +676,36 @@
       transition: background 0.2s;
     }
     #img-dl-btn:hover { background: rgba(0,0,0,0.9); }
+
+    #img-resize-toolbar {
+      position: fixed;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 7px;
+      background: rgba(30,41,59,0.9);
+      border-radius: 8px;
+      z-index: 9998;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    #img-resize-toolbar span {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      margin-right: 2px;
+    }
+    #img-resize-toolbar button {
+      padding: 3px 9px;
+      color: white;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    #img-resize-toolbar button:hover { background: rgba(255,255,255,0.2); }
+    #img-resize-toolbar button.active { background: var(--primary); border-color: var(--primary); }
     #quill-wrapper {
       flex: 1;
       display: flex;
@@ -826,7 +856,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v29</h1>
+      <h1>📝 록근_v30</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1545,6 +1575,7 @@
       theme: 'snow',
       placeholder: '메모를 입력하세요...',
       modules: {
+
         toolbar: {
           container: [
             ['bold', 'italic', 'underline', 'strike'],
@@ -1579,6 +1610,7 @@
         }
       }
     });
+    initImageResize();
   }
 
   async function downloadImage(url) {
@@ -1600,6 +1632,62 @@
     } catch(e) {
       showToast('다운로드 실패: ' + e.message);
     }
+  }
+
+  function initImageResize() {
+    const toolbar = document.createElement('div');
+    toolbar.id = 'img-resize-toolbar';
+    toolbar.innerHTML = `
+      <span>크기</span>
+      <button data-size="25">소</button>
+      <button data-size="50">중</button>
+      <button data-size="75">대</button>
+      <button data-size="100">원본</button>
+    `;
+    document.body.appendChild(toolbar);
+
+    let selectedImg = null;
+
+    const updateActiveBtn = () => {
+      if (!selectedImg) return;
+      const editorW = document.querySelector('.ql-editor').offsetWidth - 40;
+      const curW = selectedImg.offsetWidth;
+      toolbar.querySelectorAll('button').forEach(btn => {
+        const target = Math.round(editorW * Number(btn.dataset.size) / 100);
+        btn.classList.toggle('active', Math.abs(curW - target) < 5);
+      });
+    };
+
+    toolbar.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (!selectedImg) return;
+        const editorW = document.querySelector('.ql-editor').offsetWidth - 40;
+        const w = Math.round(editorW * Number(btn.dataset.size) / 100);
+        selectedImg.style.width = w + 'px';
+        selectedImg.style.height = 'auto';
+        updateActiveBtn();
+      });
+    });
+
+    document.querySelector('#quill-editor').addEventListener('click', e => {
+      if (e.target.tagName === 'IMG') {
+        selectedImg = e.target;
+        const rect = e.target.getBoundingClientRect();
+        toolbar.style.display = 'flex';
+        toolbar.style.top = (rect.bottom + 6) + 'px';
+        toolbar.style.left = rect.left + 'px';
+        updateActiveBtn();
+        e.stopPropagation();
+      }
+    });
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#img-resize-toolbar') && e.target.tagName !== 'IMG') {
+        toolbar.style.display = 'none';
+        selectedImg = null;
+      }
+    });
   }
 
   function resizeImage(file, maxW, maxH, quality) {
