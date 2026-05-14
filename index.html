@@ -661,23 +661,7 @@
       margin: 4px 0;
     }
 
-    #img-dl-btn {
-      position: fixed;
-      display: none;
-      padding: 5px 10px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 12px;
-      cursor: pointer;
-      z-index: 9999;
-      pointer-events: auto;
-      transition: background 0.2s;
-    }
-    #img-dl-btn:hover { background: rgba(0,0,0,0.9); }
-
-    #img-resize-overlay {
+#img-resize-overlay {
       position: fixed;
       display: none;
       border: 2px solid var(--primary);
@@ -861,7 +845,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v36</h1>
+      <h1>📝 록근_v37</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1544,37 +1528,13 @@
   let quill = null;
 
   function initQuill() {
-    // 이미지 다운로드 버튼 생성
-    const dlBtn = document.createElement('button');
-    dlBtn.id = 'img-dl-btn';
-    dlBtn.textContent = '⬇ 다운로드';
-    document.body.appendChild(dlBtn);
-
-    let hideTimer = null;
-    const showBtn = (img) => {
-      clearTimeout(hideTimer);
-      const rect = img.getBoundingClientRect();
-      dlBtn.style.display = 'block';
-      dlBtn.style.top = (rect.top + 6) + 'px';
-      dlBtn.style.left = (rect.left + 6) + 'px';
-      dlBtn.onclick = () => { downloadImage(img.src); dlBtn.style.display = 'none'; };
-    };
-    const scheduleHide = () => {
-      hideTimer = setTimeout(() => { dlBtn.style.display = 'none'; }, 300);
-    };
-
+    // 이미지 클릭 시 새 탭으로 열기
     const editorEl = document.querySelector('#quill-editor');
-
-    // 데스크톱: 호버
-    editorEl.addEventListener('mouseover', e => {
-      if (e.target.tagName === 'IMG') showBtn(e.target);
+    editorEl.addEventListener('click', e => {
+      if (e.target.tagName === 'IMG') {
+        window.open(e.target.src, '_blank');
+      }
     });
-    editorEl.addEventListener('mouseout', e => {
-      if (e.target.tagName === 'IMG') scheduleHide();
-    });
-    dlBtn.addEventListener('mouseenter', () => clearTimeout(hideTimer));
-    dlBtn.addEventListener('mouseleave', scheduleHide);
-
 
     // Image 블롯 확장 - style 속성 보존
     const ImageBlot = Quill.import('formats/image');
@@ -1639,26 +1599,6 @@
     initImageResize();
   }
 
-  async function downloadImage(url) {
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
-      // 모바일: 새 탭으로 열기 → 길게 눌러서 저장
-      window.open(url, '_blank');
-      showToast('이미지를 길게 눌러 저장하세요');
-      return;
-    }
-    try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'image_' + Date.now() + '.jpg';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    } catch(e) {
-      showToast('다운로드 실패: ' + e.message);
-    }
-  }
 
   function initImageResize() {
     // 오버레이 생성
