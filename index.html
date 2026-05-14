@@ -631,7 +631,7 @@
 
     .input-hint { font-size: 11px; color: #94a3b8; margin-top: 3px; }
 
-    .btn-ocr {
+    .btn-img-add {
       padding: 7px 10px;
       background: white;
       color: var(--text-muted);
@@ -643,21 +643,68 @@
       transition: all 0.2s;
       white-space: nowrap;
     }
-    .btn-ocr:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
-    .btn-ocr:disabled { opacity: 0.5; cursor: default; }
+    .btn-img-add:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+    .btn-img-add:disabled { opacity: 0.5; cursor: default; }
 
-    .ocr-progress {
+    .image-gallery {
       display: none;
-      align-items: center;
       gap: 8px;
-      padding: 10px 20px;
-      background: var(--primary-light);
-      border-bottom: 1px solid #c7d2fe;
-      font-size: 13px;
-      color: var(--primary);
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      flex-shrink: 0;
+      background: var(--bg);
+    }
+    .image-gallery.show { display: flex; }
+    .image-gallery::-webkit-scrollbar { height: 4px; }
+    .image-gallery::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .gallery-item {
+      position: relative;
       flex-shrink: 0;
     }
-    .ocr-progress.show { display: flex; }
+
+    .gallery-img {
+      width: 100px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      display: block;
+      transition: opacity 0.2s;
+    }
+    .gallery-img:hover { opacity: 0.85; }
+
+    .btn-img-delete {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--danger);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .img-uploading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100px;
+      height: 80px;
+      border-radius: 6px;
+      border: 1.5px dashed #c7d2fe;
+      background: var(--primary-light);
+      flex-shrink: 0;
+    }
 
     .editor { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: white; }
 
@@ -802,7 +849,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v18</h1>
+      <h1>📝 록근_v19</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -949,16 +996,13 @@
           <input class="title-input" type="text" id="note-title" placeholder="제목 (선택사항)" />
           <div class="editor-actions">
             <span class="save-indicator" id="save-indicator">저장됨 ✓</span>
-            <button class="btn-ocr" id="btn-ocr" onclick="document.getElementById('ocr-file-input').click()" title="이미지에서 텍스트 추출">🖼️ 텍스트 추출</button>
-            <input type="file" id="ocr-file-input" accept="image/*" style="display:none" onchange="runOCR(this)" />
+            <button class="btn-img-add" id="btn-img-add" onclick="document.getElementById('img-file-input').click()" title="이미지 추가">🖼️ 이미지</button>
+            <input type="file" id="img-file-input" accept="image/*" multiple style="display:none" onchange="uploadImages(this)" />
             <button class="btn-save" onclick="saveNote()">저장</button>
             <button class="btn-delete" id="btn-delete" onclick="deleteNote()" style="display:none">삭제</button>
           </div>
         </div>
-        <div class="ocr-progress" id="ocr-progress">
-          <div class="spinner"></div>
-          <span id="ocr-progress-text">이미지 분석 중...</span>
-        </div>
+        <div class="image-gallery" id="image-gallery"></div>
         <div class="content-area">
           <textarea class="content-input" id="note-content" placeholder="메모를 입력하세요..."></textarea>
         </div>
@@ -971,7 +1015,6 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
   const SUPABASE_URL = 'https://lmtdmubkmmuchomkbvwy.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxtdGRtdWJrbW11Y2hvbWtidnd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNjI0NzUsImV4cCI6MjA5MzczODQ3NX0.4FZ9t356ZaWI52E0Mofruool2OUrTNp6kmgAOi6tkhA';
@@ -1486,45 +1529,71 @@
   }
 
 
-  // ===== OCR =====
-  async function runOCR(input) {
-    const file = input.files[0];
-    if (!file) return;
+  // ===== IMAGE =====
+  let noteImages = [];
+
+  async function uploadImages(input) {
+    const files = Array.from(input.files);
+    if (!files.length) return;
     input.value = '';
 
-    const btn = document.getElementById('btn-ocr');
-    const progress = document.getElementById('ocr-progress');
-    const progressText = document.getElementById('ocr-progress-text');
+    const btn = document.getElementById('btn-img-add');
     btn.disabled = true;
-    progress.classList.add('show');
-    progressText.textContent = '이미지 불러오는 중...';
 
-    try {
-      const result = await Tesseract.recognize(file, 'kor+eng', {
-        logger: m => {
-          if (m.status === 'recognizing text') {
-            progressText.textContent = `텍스트 인식 중... ${Math.round(m.progress * 100)}%`;
-          }
-        }
-      });
+    for (const file of files) {
+      const tempId = 'uploading_' + Date.now();
+      addUploadingPlaceholder(tempId);
 
-      const extracted = result.data.text.trim();
-      if (!extracted) { showToast('텍스트를 인식하지 못했습니다.'); return; }
+      const ext = file.name.split('.').pop();
+      const fileName = `${currentUsername}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await sb.storage.from('memo-images').upload(fileName, file);
+      if (error) { removeGalleryItem(tempId); showToast('업로드 실패: ' + error.message); continue; }
 
-      const textarea = document.getElementById('note-content');
-      const pos = textarea.selectionStart;
-      const before = textarea.value.slice(0, pos);
-      const after = textarea.value.slice(pos);
-      textarea.value = before + (before && !before.endsWith('\n') ? '\n' : '') + extracted + (after ? '\n' : '') + after;
-      textarea.selectionStart = textarea.selectionEnd = pos + extracted.length;
-      textarea.focus();
-      showToast('텍스트 추출 완료!');
-    } catch (e) {
-      showToast('오류: ' + e.message);
-    } finally {
-      btn.disabled = false;
-      progress.classList.remove('show');
+      const { data } = sb.storage.from('memo-images').getPublicUrl(fileName);
+      noteImages.push({ url: data.publicUrl, path: fileName });
+      removeGalleryItem(tempId);
+      renderGallery();
     }
+
+    btn.disabled = false;
+  }
+
+  function addUploadingPlaceholder(id) {
+    const gallery = document.getElementById('image-gallery');
+    gallery.classList.add('show');
+    const div = document.createElement('div');
+    div.className = 'img-uploading';
+    div.id = id;
+    div.innerHTML = '<div class="spinner"></div>';
+    gallery.appendChild(div);
+  }
+
+  function removeGalleryItem(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+  }
+
+  function renderGallery() {
+    const gallery = document.getElementById('image-gallery');
+    gallery.innerHTML = '';
+    if (!noteImages.length) { gallery.classList.remove('show'); return; }
+    gallery.classList.add('show');
+    noteImages.forEach((img, i) => {
+      const item = document.createElement('div');
+      item.className = 'gallery-item';
+      item.innerHTML = `
+        <img class="gallery-img" src="${img.url}" onclick="window.open('${img.url}','_blank')" />
+        <button class="btn-img-delete" onclick="removeImage(${i})">✕</button>
+      `;
+      gallery.appendChild(item);
+    });
+  }
+
+  async function removeImage(index) {
+    const img = noteImages[index];
+    await sb.storage.from('memo-images').remove([img.path]);
+    noteImages.splice(index, 1);
+    renderGallery();
   }
 
   // ===== NOTES =====
@@ -1557,6 +1626,8 @@
     document.getElementById('note-title').value = note.title || '';
     document.getElementById('note-content').value = note.content;
     document.getElementById('btn-delete').style.display = 'block';
+    noteImages = note.images || [];
+    renderGallery();
     showEditorPanel();
     renderList(allNotes);
   }
@@ -1566,6 +1637,8 @@
     document.getElementById('note-title').value = '';
     document.getElementById('note-content').value = '';
     document.getElementById('btn-delete').style.display = 'none';
+    noteImages = [];
+    renderGallery();
     showEditorPanel();
     renderList(allNotes);
     setTimeout(() => document.getElementById('note-content').focus(), 100);
@@ -1590,7 +1663,8 @@
       p_username: currentUsername,
       p_id: currentNoteId || null,
       p_title: title,
-      p_content: content
+      p_content: content,
+      p_images: noteImages
     });
     if (error) { showToast('저장에 실패했습니다.'); return; }
     if (!currentNoteId) {
