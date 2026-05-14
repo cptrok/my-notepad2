@@ -907,7 +907,7 @@
     document.getElementById('tasks-list').innerHTML = '<div class="empty-list">검색 중...</div>';
     try {
       const res = await fetch(
-        'https://api.clickup.com/api/v2/team/25540965/task?query=' + encodeURIComponent(q) + '&list_ids[]=' + CLICKUP_LIST_ID + '&subtasks=true',
+        'https://api.clickup.com/api/v2/team/25540965/task?query=' + encodeURIComponent(q) + '&subtasks=true',
         { headers: { 'Authorization': CLICKUP_TOKEN } }
       );
       const json = await res.json();
