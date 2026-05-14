@@ -774,7 +774,7 @@
 <div id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo" onclick="handleLogoClick()">
-      <h1>📝 록근_v15</h1>
+      <h1>📝 록근_v16</h1>
       <p>이름과 비밀번호로 로그인하세요</p>
     </div>
     <div class="form-group">
@@ -1180,7 +1180,7 @@
   }
 
   function sortByDateCreated(tasks) {
-    return tasks.slice().sort((a, b) => Number(b.date_created) - Number(a.date_created));
+    return tasks.slice().sort((a, b) => Number(b.date_updated) - Number(a.date_updated));
   }
 
   // ===== CLICKUP =====
